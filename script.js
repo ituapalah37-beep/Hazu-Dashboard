@@ -1,10 +1,17 @@
-// --- KONFIGURASI MQTT CLOUD (Lintas Jaringan Berbeda) ---
-const brokerUrl = 'wss://broker.emqx.io:8083/mqtt'; 
+// --- KONFIGURASI MQTT CLOUD ---
+const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
 
 document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
     if(clientIdDisplay) clientIdDisplay.textContent = clientId;
+    
+    // Muat perangkat tersimpan saat halaman dibuka
+    loadSavedDevices();
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    fetchWeather();
 });
 
 const mqttStatusEl = document.getElementById('mqtt-status');
@@ -13,7 +20,6 @@ if(mqttStatusEl) {
     mqttStatusEl.style.color = '#f87171';
 }
 
-// Inisialisasi Koneksi MQTT Cloud
 const client = mqtt.connect(brokerUrl, {
     clientId: clientId,
     clean: true,
@@ -38,7 +44,7 @@ client.on('error', (err) => {
     client.end();
 });
 
-// Sinkronisasi status perangkat dari perangkat/jaringan lain secara real-time[cite: 3]
+// Sinkronisasi status dari HP, Laptop, atau ESP32 secara real-time
 client.on('message', (topic, payload) => {
     const message = payload.toString();
     const parts = topic.split('/');
@@ -51,11 +57,11 @@ client.on('message', (topic, payload) => {
             if (message === 'ON' && !item.classList.contains('active')) {
                 item.classList.add('active');
                 if(icon) icon.textContent = '🔵';
-                addLog(`[Sinkronisasi Cloud] <b>${deviceName}</b> dihidupkan perangkat lain.`);
+                addLog(`[Sinkronisasi Cloud] <b>${deviceName}</b> diubah menjadi ON.`);
             } else if (message === 'OFF' && item.classList.contains('active')) {
                 item.classList.remove('active');
                 if(icon) icon.textContent = '⚪';
-                addLog(`[Sinkronisasi Cloud] <b>${deviceName}</b> dimatikan perangkat lain.`);
+                addLog(`[Sinkronisasi Cloud] <b>${deviceName}</b> diubah menjadi OFF.`);
             }
         }
     });
@@ -68,15 +74,9 @@ const regionData = {
     jakarta:    { name: 'Jakarta',    lat: -6.2088,   lon: 106.8456, tz: 'Asia/Jakarta' },
     bandung:    { name: 'Bandung',    lat: -6.9175,   lon: 107.6191, tz: 'Asia/Jakarta' },
     surabaya:   { name: 'Surabaya',   lat: -7.2575,   lon: 112.7521, tz: 'Asia/Jakarta' },
-    medan:      { name: 'Medan',      lat: 3.5952,    lon: 98.6722,  tz: 'Asia/Jakarta' },
-    pontianak:  { name: 'Pontianak',  lat: -0.0263,   lon: 109.3425, tz: 'Asia/Jakarta' },
     makassar:   { name: 'Makassar',   lat: -5.1477,   lon: 119.4327, tz: 'Asia/Makassar' },
     denpasar:   { name: 'Denpasar',   lat: -8.6705,   lon: 115.2126, tz: 'Asia/Makassar' },
-    balikpapan: { name: 'Balikpapan', lat: -1.2379,   lon: 116.8529, tz: 'Asia/Makassar' },
-    manado:     { name: 'Manado',     lat: 1.4748,    lon: 124.8421, tz: 'Asia/Makassar' },
-    jayapura:   { name: 'Jayapura',   lat: -2.5337,   lon: 140.7186, tz: 'Asia/Jayapura' },
-    ambon:      { name: 'Ambon',      lat: -3.6596,   lon: 128.1908, tz: 'Asia/Jayapura' },
-    sorong:     { name: 'Sorong',     lat: -0.8762,   lon: 131.2558, tz: 'Asia/Jayapura' }
+    jayapura:   { name: 'Jayapura',   lat: -2.5337,   lon: 140.7186, tz: 'Asia/Jayapura' }
 };
 
 let currentRegionKey = 'makassar';
@@ -123,19 +123,39 @@ function toggleDevice(element, deviceName) {
     let state = 'OFF';
     
     if (element.classList.contains('active')) {
-        icon.textContent = '🔵';
+        if(icon) icon.textContent = '🔵';
         state = 'ON';
         addLog(`Perangkat <b>${deviceName}</b> dinyalakan (ON).`);
     } else {
-        icon.textContent = '⚪';
+        if(icon) icon.textContent = '⚪';
         state = 'OFF';
         addLog(`Perangkat <b>${deviceName}</b> dimatikan (OFF).`);
     }
 
-    // Kirim sinyal ke Cloud agar perangkat di jaringan lain ikut memperbarui status[cite: 3]
     if (client.connected) {
         const topic = `samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topic, state, { qos: 0 });
+    }
+}
+
+// Fungsi untuk Memuat Perangkat yang Tersimpan dari LocalStorage
+function loadSavedDevices() {
+    const saved = localStorage.getItem('samurai_custom_devices');
+    if (saved) {
+        const devices = JSON.parse(saved);
+        const deviceGrid = document.querySelector('.device-grid');
+        const addBtnItem = document.querySelector('.add-btn');
+        
+        devices.forEach(deviceName => {
+            const newCard = document.createElement('div');
+            newCard.className = 'device-item';
+            newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
+            newCard.innerHTML = `<span>🏮 ${deviceName}</span> <span class="status-icon">⚪</span>`;
+            
+            if(deviceGrid && addBtnItem) {
+                deviceGrid.insertBefore(newCard, addBtnItem);
+            }
+        });
     }
 }
 
@@ -158,6 +178,14 @@ function confirmAddDevice() {
         return;
     }
 
+    // Simpan ke LocalStorage agar permanen
+    let saved = localStorage.getItem('samurai_custom_devices');
+    let devices = saved ? JSON.parse(saved) : [];
+    if (!devices.includes(deviceName)) {
+        devices.push(deviceName);
+        localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+    }
+
     const deviceGrid = document.querySelector('.device-grid');
     const addBtnItem = document.querySelector('.add-btn');
 
@@ -166,7 +194,9 @@ function confirmAddDevice() {
     newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
     newCard.innerHTML = `<span>🏮 ${deviceName}</span> <span class="status-icon">⚪</span>`;
 
-    deviceGrid.insertBefore(newCard, addBtnItem);
+    if(deviceGrid && addBtnItem) {
+        deviceGrid.insertBefore(newCard, addBtnItem);
+    }
     addLog(`Perangkat baru ditambahkan: <b>${deviceName}</b>.`);
     closeAddModal();
 }
@@ -185,7 +215,8 @@ function saveSettings() {
     const newTitleInput = document.getElementById('welcomeInput');
     if (newTitleInput && newTitleInput.value.trim()) {
         const newTitle = newTitleInput.value.trim();
-        document.querySelector('.header h1').textContent = newTitle;
+        const headerTitle = document.querySelector('.header h1');
+        if(headerTitle) headerTitle.textContent = newTitle;
         addLog(`Teks sambutan diubah menjadi: "${newTitle}".`);
     }
 
@@ -221,29 +252,23 @@ function saveSettings() {
         }
     }
 
+    // Pengaturan Pilihan 3 Video Wallpaper
     const wallpaperFileSelect = document.getElementById('wallpaperFileSelect');
     if (wallpaperFileSelect) {
-        const selectedWallpaper = wallpaperFileSelect.value;
+        const selectedVideoUrl = wallpaperFileSelect.value;
         const videoElement = document.getElementById('wallpaperVideo');
         const sourceElement = document.getElementById('videoSource');
         const titleElement = document.getElementById('wallpaperTitle');
 
         if(sourceElement && videoElement) {
-            sourceElement.src = selectedWallpaper;
+            sourceElement.src = selectedVideoUrl;
             videoElement.load();
         }
 
         if (titleElement) {
-            if (selectedWallpaper === 'samurai.mp4') {
-                titleElement.textContent = 'Way of the Samurai ⚔️';
-                addLog(`Wallpaper diganti ke: <b>Samurai</b>.`);
-            } else if (selectedWallpaper === 'cyberpunk.mp4') {
-                titleElement.textContent = 'Cyberpunk Neon City 🌆';
-                addLog(`Wallpaper diganti ke: <b>Cyberpunk</b>.`);
-            } else if (selectedWallpaper === 'nature.mp4') {
-                titleElement.textContent = 'Peaceful Nature & Rain 🌧️';
-                addLog(`Wallpaper diganti ke: <b>Nature</b>.`);
-            }
+            const selectedText = wallpaperFileSelect.options[wallpaperFileSelect.selectedIndex].text;
+            titleElement.textContent = selectedText + ' ⚔️';
+            addLog(`Wallpaper diganti ke: <b>${selectedText}</b>.`);
         }
     }
 
@@ -281,9 +306,3 @@ async function fetchWeather() {
         weatherBox.textContent = `${reg.name} ⛅ 28°C`;
     }
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
-    fetchWeather();
-});

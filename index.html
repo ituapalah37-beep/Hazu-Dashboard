@@ -1,159 +1,194 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Samurai IoT Dashboard</title>
-    <!-- Pustaka MQTT.js untuk komunikasi Cloud lintas jaringan[cite: 1, 3] -->
+    <!-- Pustaka MQTT.js untuk komunikasi Cloud lintas jaringan -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div class="dashboard-container">
-        <!-- Sidebar Kiri (Desktop) / Bottom Nav (Mobile) -->
-        <nav class="sidebar">
-            <a class="menu-item active" onclick="switchView('home', this)">🏠 <span>Home</span></a>
-            <a class="menu-item" onclick="switchView('result', this)">📊 <span>Result</span></a>
-            <a class="menu-item" onclick="switchView('device', this)">⚙️ <span>Device</span></a>
-            <a class="menu-item settings" onclick="openSettings()">🛠️ <span>Setting</span></a>
-        </nav>
+      <!-- Sidebar Kiri (Desktop) / Bottom Nav (Mobile) -->
+      <nav class="sidebar">
+        <a class="menu-item active" onclick="switchView('home', this)"
+          >🏠 <span>Home</span></a
+        >
+        <a class="menu-item" onclick="switchView('result', this)"
+          >📊 <span>Result</span></a
+        >
+        <a class="menu-item" onclick="switchView('device', this)"
+          >⚙️ <span>Device</span></a
+        >
+        <a class="menu-item settings" onclick="openSettings()"
+          >🛠️ <span>Setting</span></a
+        >
+      </nav>
 
-        <!-- Bagian Konten Utama -->
-        <main class="main-content">
-            <!-- Header Atas -->
-            <header class="header">
-                <h1>⛩️ Samurai Control</h1>
-                <div class="weather-box">Memuat cuaca...</div>
-            </header>
+      <!-- Bagian Konten Utama -->
+      <main class="main-content">
+        <!-- Header Atas -->
+        <header class="header">
+          <h1>⛩️ Samurai Control</h1>
+          <div class="weather-box">Memuat cuaca...</div>
+        </header>
 
-            <!-- Tampilan Home / Kontrol Utama -->
-            <section id="home-view" class="view-section active">
-                <!-- Live Wallpaper di Paling Atas -->
-                <div class="wallpaper-card">
-                    <video id="wallpaperVideo" class="wallpaper-video" autoplay loop muted playsinline>
-                        <source id="videoSource" src="samurai.mp4" type="video/mp4">
-                    </video>
-                    <div class="wallpaper-overlay">
-                        <h3 id="wallpaperTitle">Way of the Samurai ⚔️</h3>
-                    </div>
-                </div>
+        <!-- Tampilan Home / Kontrol Utama -->
+        <section id="home-view" class="view-section active">
+          <!-- Live Wallpaper -->
+          <div class="wallpaper-card">
+            <video
+              id="wallpaperVideo"
+              class="wallpaper-video"
+              autoplay
+              loop
+              muted
+              playsinline
+            >
+              <source
+                id="videoSource"
+                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                type="video/mp4"
+              />
+            </video>
+            <div class="wallpaper-overlay">
+              <h3 id="wallpaperTitle">Samurai Cyber Stream ⚔️</h3>
+            </div>
+          </div>
 
-                <!-- Panel Kontrol Perangkat -->
-                <div class="device-section">
-                    <h3>Panel Kontrol Perangkat</h3>
-                    <div class="device-grid">
-                        <div class="device-item" onclick="toggleDevice(this, 'Lampu Utama')">
-                            <span>🏮 Lampu Utama</span>
-                            <span class="status-icon">⚪</span>
-                        </div>
-                        <div class="device-item add-btn" onclick="openAddModal()">
-                            + Tambah Perangkat
-                        </div>
-                    </div>
-                </div>
-            </section>
+          <!-- Panel Kontrol Perangkat -->
+          <div class="device-section">
+            <h3>Panel Kontrol Perangkat</h3>
+            <div class="device-grid">
+              <div
+                class="device-item"
+                onclick="toggleDevice(this, 'Lampu Utama')"
+              >
+                <span>🏮 Lampu Utama</span>
+                <span class="status-icon">⚪</span>
+              </div>
+              <div class="device-item add-btn" onclick="openAddModal()">
+                + Tambah Perangkat
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- Tampilan Result / Logs -->
-            <section id="result-view" class="view-section">
-                <h2>📊 Log Aktivitas Sistem</h2>
-                <div class="log-container">
-                    <div id="logList" class="log-list">
-                        <div class="log-item">
-                            <span>Sistem siap. Menunggu koneksi cloud...</span>
-                            <span class="log-time">-</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <!-- Tampilan Result / Logs -->
+        <section id="result-view" class="view-section">
+          <h2>📊 Log Aktivitas Sistem</h2>
+          <div class="log-container">
+            <div id="logList" class="log-list">
+              <div class="log-item">
+                <span>Sistem siap. Menunggu koneksi cloud...</span>
+                <span class="log-time">-</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- Tampilan Device / Info -->
-            <section id="device-view" class="view-section">
-                <h2>⚙️ Informasi Status Cloud</h2>
-                <div class="device-manager-container">
-                    <div class="hardware-card">
-                        <div class="hw-info">
-                            <h4>Broker MQTT</h4>
-                            <p>EMQX Cloud (Public WSS)</p>
-                        </div>
-                        <span id="mqtt-status" class="hw-status" style="color: #f87171;">Menghubungkan...</span>
-                    </div>
-                    <div class="hardware-card">
-                        <div class="hw-info">
-                            <h4>Client ID Perangkat Ini</h4>
-                            <p id="client-id-display">-</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <!-- Tampilan Device / Info -->
+        <section id="device-view" class="view-section">
+          <h2>⚙️ Informasi Status Cloud</h2>
+          <div class="device-manager-container">
+            <div class="hardware-card">
+              <div class="hw-info">
+                <h4>Broker MQTT</h4>
+                <p>EMQX Cloud (Public WSS)</p>
+              </div>
+              <span id="mqtt-status" class="hw-status" style="color: #f87171"
+                >Menghubungkan...</span
+              >
+            </div>
+            <div class="hardware-card">
+              <div class="hw-info">
+                <h4>Client ID Perangkat Ini</h4>
+                <p id="client-id-display">-</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- Informasi Waktu & Tanggal Bawah -->
-            <footer class="info-row">
-                <span class="date-text"></span>
-                <span class="clock-text"></span>
-            </footer>
-        </main>
+        <!-- Informasi Waktu & Tanggal Bawah -->
+        <footer class="info-row">
+          <span class="date-text"></span>
+          <span class="clock-text"></span>
+        </footer>
+      </main>
     </div>
 
     <!-- Modal Tambah Perangkat -->
     <div id="addModal" class="modal">
-        <div class="modal-content">
-            <h3>Tambah Perangkat Baru</h3>
-            <input type="text" id="deviceNameInput" placeholder="Nama Perangkat (misal: Kipas)">
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeAddModal()">Batal</button>
-                <button class="btn-submit" onclick="confirmAddDevice()">Simpan</button>
-            </div>
+      <div class="modal-content">
+        <h3>Tambah Perangkat Baru</h3>
+        <input
+          type="text"
+          id="deviceNameInput"
+          placeholder="Nama Perangkat (misal: Kipas)"
+        />
+        <div class="modal-buttons">
+          <button class="btn-cancel" onclick="closeAddModal()">Batal</button>
+          <button class="btn-submit" onclick="confirmAddDevice()">
+            Simpan
+          </button>
         </div>
+      </div>
     </div>
 
     <!-- Modal Pengaturan -->
     <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <h3>Pengaturan Dashboard</h3>
-            <div class="setting-item">
-                <label>Judul Sambutan:</label>
-                <input type="text" id="welcomeInput" placeholder="⛩️ Samurai Control">
-            </div>
-            <div class="setting-item">
-                <label>Wilayah:</label>
-                <select id="regionSelect">
-                    <option value="jakarta">Jakarta</option>
-                    <option value="bandung">Bandung</option>
-                    <option value="surabaya">Surabaya</option>
-                    <option value="makassar">Makassar</option>
-                    <option value="denpasar">Denpasar</option>
-                    <option value="jayapura">Jayapura</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>Tema Tampilan:</label>
-                <select id="themeSelect">
-                    <option value="dark">Dark Mode</option>
-                    <option value="light">Light Mode</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>Live Wallpaper:</label>
-                <select id="wallpaperStatusSelect">
-                    <option value="on">Aktif</option>
-                    <option value="off">Nonaktif</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>Pilih Video Wallpaper:</label>
-                <select id="wallpaperFileSelect">
-                    <option value="samurai.mp4">Samurai</option>
-                    <option value="cyberpunk.mp4">Cyberpunk</option>
-                    <option value="nature.mp4">Nature</option>
-                </select>
-            </div>
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeSettings()">Batal</button>
-                <button class="btn-submit" onclick="saveSettings()">Simpan</button>
-            </div>
+      <div class="modal-content">
+        <h3>Pengaturan Dashboard</h3>
+        <div class="setting-item">
+          <label>Judul Sambutan:</label>
+          <input
+            type="text"
+            id="welcomeInput"
+            placeholder="⛩️ Samurai Control"
+          />
         </div>
+        <div class="setting-item">
+          <label>Wilayah:</label>
+          <select id="regionSelect">
+            <option value="jakarta">Jakarta</option>
+            <option value="bandung">Bandung</option>
+            <option value="surabaya">Surabaya</option>
+            <option value="makassar">Makassar</option>
+            <option value="denpasar">Denpasar</option>
+            <option value="jayapura">Jayapura</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Tema Tampilan:</label>
+          <select id="themeSelect">
+            <option value="dark">Dark Mode</option>
+            <option value="light">Light Mode</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Live Wallpaper:</label>
+          <select id="wallpaperStatusSelect">
+            <option value="on">Aktif</option>
+            <option value="off">Nonaktif</option>
+          </select>
+        </div>
+        <!-- Bagian di dalam Modal Pengaturan index.html -->
+        <div class="setting-item">
+          <label>Pilih Video Wallpaper:</label>
+          <select id="wallpaperFileSelect">
+            <option value="https://drive.google.com/file/d/16FnqfpNwdViEAHxB-oRXepfOj31zCA0l/view?usp=sharing">Samurai Cyber Neon</option>
+            <option value="https://drive.google.com/file/d/1iaRW_2_NDFZc7mZnz9pvhhUTqRfM1Z6W/view?usp=sharing">Samurai Monochrome</option>
+            <option value="https://drive.google.com/file/d/1lOiNMEQmsJLX5PPdwnPD7lbzzdwG9o1J/view?usp=sharing">Kucing & Ikan Koi</option>
+          </select>
+        </div>
+        <div class="modal-buttons">
+          <button class="btn-cancel" onclick="closeSettings()">Batal</button>
+          <button class="btn-submit" onclick="saveSettings()">Simpan</button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
