@@ -44,27 +44,57 @@ client.on('error', (err) => {
     client.end();
 });
 
-// Sinkronisasi status dari HP, Laptop, atau ESP32 secara real-time
+// Sinkronisasi status & pembuatan perangkat otomatis lintas perangkat/jaringan
 client.on('message', (topic, payload) => {
     const message = payload.toString();
     const parts = topic.split('/');
-    const deviceName = parts[parts.length - 1];
+    const deviceNameRaw = parts[parts.length - 1]; // contoh: "lampu_utama" atau "kipas"
 
+    let found = false;
+
+    // Cek apakah perangkat sudah ada di layar
     document.querySelectorAll('.device-item').forEach(item => {
         const spanText = item.querySelector('span');
-        if (spanText && spanText.textContent.toLowerCase().includes(deviceName.toLowerCase())) {
+        if (spanText && spanText.textContent.toLowerCase().includes(deviceNameRaw.replace(/_/g, ' '))) {
+            found = true;
             const icon = item.querySelector('.status-icon');
             if (message === 'ON' && !item.classList.contains('active')) {
                 item.classList.add('active');
                 if(icon) icon.textContent = '🔵';
-                addLog(`[Sinkronisasi Cloud] <b>${deviceName}</b> diubah menjadi ON.`);
+                addLog(`[Sinkronisasi Cloud] Perangkat diaktifkan dari perangkat lain.`);
             } else if (message === 'OFF' && item.classList.contains('active')) {
                 item.classList.remove('active');
                 if(icon) icon.textContent = '⚪';
-                addLog(`[Sinkronisasi Cloud] <b>${deviceName}</b> diubah menjadi OFF.`);
+                addLog(`[Sinkronisasi Cloud] Perangkat dinonaktifkan dari perangkat lain.`);
             }
         }
     });
+
+    // JIKA PERANGKAT BELUM ADA DI LAYAR (Misal baru ditambahkan di HP lain), BUAT OTOMATIS!
+    if (!found && deviceNameRaw) {
+        const formattedName = deviceNameRaw.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const deviceGrid = document.querySelector('.device-grid');
+        const addBtnItem = document.querySelector('.add-btn');
+
+        if (deviceGrid && addBtnItem) {
+            const newCard = document.createElement('div');
+            newCard.className = message === 'ON' ? 'device-item active' : 'device-item';
+            newCard.setAttribute('onclick', `toggleDevice(this, '${formattedName}')`);
+            newCard.innerHTML = `<span>🏮 ${formattedName}</span> <span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span>`;
+            
+            deviceGrid.insertBefore(newCard, addBtnItem);
+            
+            // Simpan juga ke localStorage perangkat ini agar permanen
+            let saved = localStorage.getItem('samurai_custom_devices');
+            let devices = saved ? JSON.parse(saved) : [];
+            if (!devices.includes(formattedName)) {
+                devices.push(formattedName);
+                localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+            }
+
+            addLog(`[Sinkronisasi Cloud] Perangkat baru <b>${formattedName}</b> ditambahkan secara otomatis.`);
+        }
+    }
 });
 
 const addModal = document.getElementById('addModal');
