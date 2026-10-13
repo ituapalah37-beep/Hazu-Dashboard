@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samurai Mobile IoT Dashboard</title>
+    <!-- Pustaka MQTT.js untuk koneksi Cloud EMQX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header Atas -->
+        <header class="header">
+            <h1 id="mainTitle">⛩️ Samurai Control</h1>
+            <div id="weather-widget" class="weather-box">Memuat cuaca...</div>
+        </header>
+
+        <!-- Main Content Views -->
+        <main class="main-content">
+            <!-- Tampilan Home / Kontrol Perangkat -->
+            <section id="home-view" class="view-section active">
+                <!-- Live Wallpaper -->
+                <div class="wallpaper-card">
+                    <video id="wallpaperVideo" class="wallpaper-video" autoplay muted loop playsinline>
+                        <source id="videoSource" src="samurai.mp4" type="video/mp4">
+                    </video>
+                    <div class="wallpaper-overlay">
+                        <h3 id="wallpaperTitle">Way of the Samurai ⚔️</h3>
+                    </div>
+                </div>
+
+                <div class="device-section">
+                    <h3>Kontrol Perangkat IoT</h3>
+                    <div class="device-grid">
+                        <div class="device-item" onclick="toggleDevice(this, 'Lampu Utama', 'samurai/lampu')">
+                            <span>Lampu Utama</span>
+                            <span class="status-icon">⚪</span>
+                        </div>
+                        <div class="device-item" onclick="toggleDevice(this, 'Kipas Angin', 'samurai/kipas')">
+                            <span>Kipas Angin</span>
+                            <span class="status-icon">⚪</span>
+                        </div>
+                        <div class="device-item add-btn" onclick="openAddModal()">
+                            + Tambah
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tampilan Result / Logs -->
+            <section id="result-view" class="view-section">
+                <h3>📊 Log Aktivitas Sistem</h3>
+                <div class="log-container">
+                    <div id="logList" class="log-list">
+                        <div class="log-item"><span>Sistem siap. Menghubungkan ke EMQX...</span> <span class="log-time">Baru saja</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tampilan Device / MQTT Status -->
+            <section id="device-view" class="view-section">
+                <h3>⚙️ Status Koneksi Cloud</h3>
+                <div class="hardware-card">
+                    <div class="hw-info">
+                        <h4>EMQX Cloud Broker</h4>
+                        <p>Status: <span id="mqtt-status" style="color: #f87171;">Menghubungkan...</span></p>
+                    </div>
+                    <div class="hw-status" id="mqtt-badge">Offline</div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation Bar (Sangat ramah layar HP) -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="switchView('home', this)">🏠<span>Home</span></button>
+            <button class="nav-btn" onclick="switchView('result', this)">📊<span>Log</span></button>
+            <button class="nav-btn" onclick="switchView('device', this)">⚙️<span>Cloud</span></button>
+            <button class="nav-btn settings-btn" onclick="openSettings()">🛠️<span>Setting</span></button>
+        </nav>
+    </div>
+
+    <!-- Modal Tambah Perangkat -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h3>Tambah Perangkat Baru</h3>
+            <div class="setting-item">
+                <label>Nama Perangkat</label>
+                <input type="text" id="deviceNameInput" placeholder="Contoh: Pompa Air">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeAddModal()">Batal</button>
+                <button class="btn-submit" onclick="confirmAddDevice()">Tambah</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pengaturan & Konfigurasi Broker EMQX -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3>Pengaturan Dashboard</h3>
+            <div class="setting-item">
+                <label>Judul Dashboard</label>
+                <input type="text" id="welcomeInput" placeholder="Samurai Control">
+            </div>
+            <div class="setting-item">
+                <label>URL Broker EMQX (WebSocket WSS)</label>
+                <input type="text" id="brokerInput" value="wss://broker.emqx.io:8083/mqtt">
+                <small style="color: #9ca3af; font-size: 10px;">Gunakan URL WebSocket dari EMQX Cloud Anda.</small>
+            </div>
+            <div class="setting-item">
+                <label>Tema Tampilan</label>
+                <select id="themeSelect">
+                    <option value="dark">Dark Mode (Gelap)</option>
+                    <option value="light">Light Mode (Terang)</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeSettings()">Batal</button>
+                <button class="btn-submit" onclick="saveSettings()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

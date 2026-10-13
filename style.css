@@ -1,0 +1,305 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f172a, #1e293b, #1d4ed8, #0f172a);
+    background-size: 400% 400%;
+    animation: gradientAnimation 15s ease infinite;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 5px;
+}
+
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Kontainer Utama berukuran fleksibel ala aplikasi mobile */
+.dashboard-container {
+    width: 100%;
+    max-width: 440px;
+    height: 100vh;
+    max-height: 840px;
+    background-color: #111827;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    border: 1px solid #1f2937;
+    position: relative;
+}
+
+/* Header Atas */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: #172554;
+    border-bottom: 1px solid #1f2937;
+}
+
+.header h1 {
+    font-size: 17px;
+    color: #f9fafb;
+}
+
+.weather-box {
+    font-size: 12px;
+    font-weight: bold;
+    color: #60a5fa;
+}
+
+/* Konten Utama */
+.main-content {
+    flex: 1;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    padding-bottom: 75px;
+}
+
+.view-section {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+}
+
+.view-section.active {
+    display: flex;
+}
+
+.view-section h3 {
+    font-size: 13px;
+    color: #f3f4f6;
+}
+
+/* Wallpaper Video */
+.wallpaper-card {
+    width: 100%;
+    height: 170px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #374151;
+    background: #1f2937;
+}
+
+.wallpaper-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.wallpaper-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(17, 24, 39, 0.75);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.wallpaper-overlay h3 {
+    color: #f3f4f6;
+    font-size: 11px;
+}
+
+/* Grid Perangkat */
+.device-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.device-item {
+    background: #1f2937;
+    border: 1px solid #374151;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.2s;
+}
+
+.device-item.active {
+    background: #2563eb;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.device-item.add-btn {
+    justify-content: center;
+    color: #60a5fa;
+    font-weight: bold;
+    background: #111827;
+    border: 1px dashed #4b5563;
+}
+
+/* Bottom Navigasi HP */
+.bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 62px;
+    background: #111827;
+    border-top: 1px solid #1f2937;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.nav-btn span {
+    font-size: 10px;
+}
+
+.nav-btn.active, .nav-btn:hover {
+    color: #38bdf8;
+    font-weight: bold;
+}
+
+/* Log Aktivitas & Status Cloud */
+.log-container {
+    flex: 1;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 12px;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 380px;
+}
+
+.log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-item {
+    background: #111827;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #f3f4f6;
+}
+
+.log-time {
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+.hardware-card {
+    background: #1f2937;
+    border: 1px solid #374151;
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hw-info h4 { font-size: 13px; color: #f9fafb; }
+.hw-info p { font-size: 11px; color: #9ca3af; }
+.hw-status { font-size: 12px; font-weight: bold; color: #ef4444; }
+.hw-status.online { color: #4ade80; }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 15px;
+}
+
+.modal-content {
+    background: #1f2937;
+    padding: 20px;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #374151;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-content h3 { color: #f9fafb; font-size: 14px; }
+.modal-content input, .modal-content select {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    border: 1px solid #4b5563;
+    background: #111827;
+    color: white;
+    font-size: 12px;
+    outline: none;
+}
+
+.setting-item { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #d1d5db; }
+.modal-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-cancel, .btn-submit {
+    padding: 7px 12px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+.btn-cancel { background: #374151; color: #d1d5db; }
+.btn-submit { background: #2563eb; color: white; }
+
+/* Light Theme */
+body.light-mode { background: linear-gradient(135deg, #e2e8f0, #cbd5e1, #93c5fd, #e2e8f0); }
+body.light-mode .dashboard-container { background-color: #ffffff; border-color: #cbd5e1; }
+body.light-mode .header { background: #3b82f6; }
+body.light-mode .header h1 { color: #ffffff; }
+body.light-mode .bottom-nav { background: #ffffff; border-color: #cbd5e1; }
+body.light-mode .nav-btn { color: #64748b; }
+body.light-mode .nav-btn.active { color: #2563eb; }
+body.light-mode .device-item { background: #f8fafc; border-color: #e2e8f0; color: #1e293b; }
+body.light-mode .device-item.active { background: #2563eb; color: white; }
+body.light-mode .modal-content { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
+body.light-mode .modal-content input, body.light-mode .modal-content select { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+body.light-mode .log-container, body.light-mode .hardware-card, body.light-mode .log-item { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
