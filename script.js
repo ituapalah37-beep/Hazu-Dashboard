@@ -208,7 +208,8 @@ function toggleDevice(element, deviceName) {
 
     if (client.connected) {
         const topic = `samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
-        client.publish(topic, state, { qos: 0 });
+        // Menggunakan retain: true agar status tombol diingat oleh broker
+        client.publish(topic, state, { qos: 0, retain: true });
     }
 }
 
@@ -319,9 +320,9 @@ function confirmAddDevice() {
     }
     addLog(`Perangkat baru ditambahkan: <b>${deviceName}</b>.`);
 
-    // Kirim sinyal MQTT agar perangkat ini juga muncul di HP/Laptop lain secara otomatis
+    // Kirim sinyal MQTT dengan retain: true agar perangkat baru disinkronkan otomatis
     if (client.connected) {
-        client.publish(`samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0 });
+        client.publish(`samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
     }
 
     closeAddModal();
@@ -348,7 +349,7 @@ function saveSettings() {
         addLog(`Teks sambutan diubah menjadi: "${newTitle}".`);
 
         if (client.connected) {
-            client.publish('samurai/settings/title', newTitle, { qos: 0 });
+            client.publish('samurai/settings/title', newTitle, { qos: 0, retain: true });
         }
     }
 
@@ -377,7 +378,7 @@ function saveSettings() {
         }
 
         if (client.connected) {
-            client.publish('samurai/settings/theme', themeVal, { qos: 0 });
+            client.publish('samurai/settings/theme', themeVal, { qos: 0, retain: true });
         }
     }
 
@@ -390,7 +391,7 @@ function saveSettings() {
             wallpaperCard.style.display = 'none';
             localStorage.setItem('samurai_wallpaper_status', 'off');
             addLog(`Live Wallpaper dinonaktifkan.`);
-            if (client.connected) client.publish('samurai/settings/wallpaper', 'off', { qos: 0 });
+            if (client.connected) client.publish('samurai/settings/wallpaper', 'off', { qos: 0, retain: true });
         } else {
             wallpaperCard.style.display = 'block';
             localStorage.setItem('samurai_wallpaper_status', 'on');
@@ -420,7 +421,7 @@ function saveSettings() {
         }
 
         if (client.connected) {
-            client.publish('samurai/settings/wallpaper', selectedVideoUrl, { qos: 0 });
+            client.publish('samurai/settings/wallpaper', selectedVideoUrl, { qos: 0, retain: true });
         }
     }
 
@@ -455,6 +456,6 @@ async function fetchWeather() {
         const temp = Math.round(data.current.temperature_2m);
         weatherBox.textContent = `${reg.name} ⛅ ${temp}°C`;
     } catch (error) {
-        weatherBox.textContent = `${reg.name} ⛅ 28$°C`;
+        weatherBox.textContent = `${reg.name} ⛅ 28°C`;
     }
 }
