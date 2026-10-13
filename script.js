@@ -1,6 +1,9 @@
-// --- KONFIGURASI MQTT CLOUD ---
+// --- KONFIGURASI MQTT CLOUD (Topik Unik Privat) ---
 const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
+
+// Gunakan topik unik agar tidak bertabrakan dengan pengguna lain di broker publik
+const TOPIC_PREFIX = 'hazu_samurai_iot_999';
 
 document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
@@ -34,8 +37,9 @@ client.on('connect', () => {
     }
     console.log("[MQTT] Terhubung dengan ID:", clientId);
     addLog('Berhasil terhubung ke Cloud MQTT Broker.');
-    // Subscribe ke semua topik samurai (kontrol perangkat & pengaturan)
-    client.subscribe('samurai/#', { qos: 0 });
+    
+    // Subscribe ke topik privat Anda
+    client.subscribe(`${TOPIC_PREFIX}/#`, { qos: 0 });
 });
 
 client.on('error', (err) => {
@@ -63,7 +67,6 @@ client.on('message', (topic, payload) => {
         document.querySelectorAll('.device-item').forEach(item => {
             const spanText = item.querySelector('span');
             if (spanText) {
-                // Bersihkan emoji dan spasi untuk pencocokan yang akurat
                 const cleanName = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
                 if (cleanName === target.replace(/_/g, ' ')) {
                     found = true;
@@ -112,13 +115,19 @@ client.on('message', (topic, payload) => {
             const headerTitle = document.querySelector('.header h1');
             if (headerTitle) headerTitle.textContent = message;
             localStorage.setItem('samurai_title', message);
+            const welcomeInput = document.getElementById('welcomeInput');
+            if (welcomeInput) welcomeInput.value = message;
         } else if (target === 'theme') {
             if (message === 'light') {
                 document.body.classList.add('light-mode');
                 localStorage.setItem('samurai_theme', 'light');
+                const themeSelect = document.getElementById('themeSelect');
+                if (themeSelect) themeSelect.value = 'light';
             } else {
                 document.body.classList.remove('light-mode');
                 localStorage.setItem('samurai_theme', 'dark');
+                const themeSelect = document.getElementById('themeSelect');
+                if (themeSelect) themeSelect.value = 'dark';
             }
         } else if (target === 'wallpaper') {
             const videoElement = document.getElementById('wallpaperVideo');
@@ -128,6 +137,8 @@ client.on('message', (topic, payload) => {
             if (message === 'off') {
                 if(wallpaperCard) wallpaperCard.style.display = 'none';
                 localStorage.setItem('samurai_wallpaper_status', 'off');
+                const statusSelect = document.getElementById('wallpaperStatusSelect');
+                if (statusSelect) statusSelect.value = 'off';
             } else {
                 if(wallpaperCard) wallpaperCard.style.display = 'block';
                 if(sourceElement && videoElement) {
@@ -136,6 +147,8 @@ client.on('message', (topic, payload) => {
                 }
                 localStorage.setItem('samurai_wallpaper_status', 'on');
                 localStorage.setItem('samurai_wallpaper_url', message);
+                const fileSelect = document.getElementById('wallpaperFileSelect');
+                if (fileSelect) fileSelect.value = message;
             }
         }
     }
@@ -207,8 +220,7 @@ function toggleDevice(element, deviceName) {
     }
 
     if (client.connected) {
-        const topic = `samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
-        // Menggunakan retain: true agar status tombol diingat oleh broker
+        const topic = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topic, state, { qos: 0, retain: true });
     }
 }
@@ -242,7 +254,6 @@ function loadSavedDevices() {
 
 // Memuat Pengaturan Tersimpan dari LocalStorage saat Refresh
 function loadSavedSettings() {
-    // 1. Judul
     const savedTitle = localStorage.getItem('samurai_title');
     if (savedTitle) {
         const headerTitle = document.querySelector('.header h1');
@@ -251,7 +262,6 @@ function loadSavedSettings() {
         if (welcomeInput) welcomeInput.value = savedTitle;
     }
 
-    // 2. Tema
     const savedTheme = localStorage.getItem('samurai_theme');
     if (savedTheme === 'light') {
         document.body.classList.add('light-mode');
@@ -259,7 +269,6 @@ function loadSavedSettings() {
         if (themeSelect) themeSelect.value = 'light';
     }
 
-    // 3. Wallpaper Status & URL
     const wallpaperStatus = localStorage.getItem('samurai_wallpaper_status');
     const wallpaperCard = document.querySelector('.wallpaper-card');
     if (wallpaperStatus === 'off') {
@@ -320,9 +329,8 @@ function confirmAddDevice() {
     }
     addLog(`Perangkat baru ditambahkan: <b>${deviceName}</b>.`);
 
-    // Kirim sinyal MQTT dengan retain: true agar perangkat baru disinkronkan otomatis
     if (client.connected) {
-        client.publish(`samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
+        client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
     }
 
     closeAddModal();
@@ -339,7 +347,6 @@ function closeSettings() {
 }
 
 function saveSettings() {
-    // 1. Simpan Judul & Publish via MQTT
     const newTitleInput = document.getElementById('welcomeInput');
     if (newTitleInput && newTitleInput.value.trim()) {
         const newTitle = newTitleInput.value.trim();
@@ -349,11 +356,10 @@ function saveSettings() {
         addLog(`Teks sambutan diubah menjadi: "${newTitle}".`);
 
         if (client.connected) {
-            client.publish('samurai/settings/title', newTitle, { qos: 0, retain: true });
+            client.publish(`${TOPIC_PREFIX}/settings/title`, newTitle, { qos: 0, retain: true });
         }
     }
 
-    // 2. Simpan Wilayah
     const regionSelect = document.getElementById('regionSelect');
     if (regionSelect && regionSelect.value && regionData[regionSelect.value]) {
         currentRegionKey = regionSelect.value;
@@ -363,7 +369,6 @@ function saveSettings() {
         fetchWeather();
     }
 
-    // 3. Simpan Tema & Publish via MQTT
     const themeSelect = document.getElementById('themeSelect');
     if (themeSelect) {
         const themeVal = themeSelect.value;
@@ -378,11 +383,10 @@ function saveSettings() {
         }
 
         if (client.connected) {
-            client.publish('samurai/settings/theme', themeVal, { qos: 0, retain: true });
+            client.publish(`${TOPIC_PREFIX}/settings/theme`, themeVal, { qos: 0, retain: true });
         }
     }
 
-    // 4. Simpan Status Wallpaper & Publish via MQTT
     const wallpaperStatusSelect = document.getElementById('wallpaperStatusSelect');
     const wallpaperCard = document.querySelector('.wallpaper-card');
     if (wallpaperStatusSelect && wallpaperCard) {
@@ -391,7 +395,7 @@ function saveSettings() {
             wallpaperCard.style.display = 'none';
             localStorage.setItem('samurai_wallpaper_status', 'off');
             addLog(`Live Wallpaper dinonaktifkan.`);
-            if (client.connected) client.publish('samurai/settings/wallpaper', 'off', { qos: 0, retain: true });
+            if (client.connected) client.publish(`${TOPIC_PREFIX}/settings/wallpaper`, 'off', { qos: 0, retain: true });
         } else {
             wallpaperCard.style.display = 'block';
             localStorage.setItem('samurai_wallpaper_status', 'on');
@@ -399,7 +403,6 @@ function saveSettings() {
         }
     }
 
-    // 5. Simpan URL Video Wallpaper & Publish via MQTT
     const wallpaperFileSelect = document.getElementById('wallpaperFileSelect');
     if (wallpaperFileSelect && wallpaperStatusSelect.value !== 'off') {
         const selectedVideoUrl = wallpaperFileSelect.value;
@@ -421,7 +424,7 @@ function saveSettings() {
         }
 
         if (client.connected) {
-            client.publish('samurai/settings/wallpaper', selectedVideoUrl, { qos: 0, retain: true });
+            client.publish(`${TOPIC_PREFIX}/settings/wallpaper`, selectedVideoUrl, { qos: 0, retain: true });
         }
     }
 
