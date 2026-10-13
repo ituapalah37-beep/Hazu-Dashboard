@@ -1,4 +1,4 @@
-// --- KONFIGURASI MQTT CLOUD ---
+// --- KONFIGURASI MQTT CLOUD (Dengan Debugging) ---
 const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
 
@@ -6,9 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
     if(clientIdDisplay) clientIdDisplay.textContent = clientId;
     
-    // Muat perangkat tersimpan saat halaman dibuka
     loadSavedDevices();
-
     updateDateTime();
     setInterval(updateDateTime, 1000);
     fetchWeather();
@@ -31,6 +29,7 @@ client.on('connect', () => {
         mqttStatusEl.textContent = 'Terhubung (Cloud)';
         mqttStatusEl.style.color = '#4ade80';
     }
+    console.log("[MQTT] Berhasil terhubung dengan Client ID:", clientId);
     addLog('Berhasil terhubung ke Cloud MQTT Broker.');
     client.subscribe('samurai/control/#', { qos: 0 });
 });
@@ -40,19 +39,21 @@ client.on('error', (err) => {
         mqttStatusEl.textContent = 'Gagal Terhubung';
         mqttStatusEl.style.color = '#f87171';
     }
+    console.error("[MQTT] Error koneksi:", err);
     addLog('Koneksi MQTT Error: ' + err.message);
     client.end();
 });
 
-// Sinkronisasi status & pembuatan perangkat otomatis lintas perangkat/jaringan
+// Menerima pesan dari perangkat lain
 client.on('message', (topic, payload) => {
     const message = payload.toString();
+    console.log(`[MQTT RECEIVED] Topik: ${topic} | Pesan: ${message}`);
+    
     const parts = topic.split('/');
-    const deviceNameRaw = parts[parts.length - 1]; // contoh: "lampu_utama" atau "kipas"
+    const deviceNameRaw = parts[parts.length - 1]; 
 
     let found = false;
 
-    // Cek apakah perangkat sudah ada di layar
     document.querySelectorAll('.device-item').forEach(item => {
         const spanText = item.querySelector('span');
         if (spanText && spanText.textContent.toLowerCase().includes(deviceNameRaw.replace(/_/g, ' '))) {
@@ -61,16 +62,15 @@ client.on('message', (topic, payload) => {
             if (message === 'ON' && !item.classList.contains('active')) {
                 item.classList.add('active');
                 if(icon) icon.textContent = '🔵';
-                addLog(`[Sinkronisasi Cloud] Perangkat diaktifkan dari perangkat lain.`);
+                addLog(`[Sinkronisasi] Perangkat diaktifkan dari perangkat lain.`);
             } else if (message === 'OFF' && item.classList.contains('active')) {
                 item.classList.remove('active');
                 if(icon) icon.textContent = '⚪';
-                addLog(`[Sinkronisasi Cloud] Perangkat dinonaktifkan dari perangkat lain.`);
+                addLog(`[Sinkronisasi] Perangkat dinonaktifkan dari perangkat lain.`);
             }
         }
     });
 
-    // JIKA PERANGKAT BELUM ADA DI LAYAR (Misal baru ditambahkan di HP lain), BUAT OTOMATIS!
     if (!found && deviceNameRaw) {
         const formattedName = deviceNameRaw.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         const deviceGrid = document.querySelector('.device-grid');
@@ -84,7 +84,6 @@ client.on('message', (topic, payload) => {
             
             deviceGrid.insertBefore(newCard, addBtnItem);
             
-            // Simpan juga ke localStorage perangkat ini agar permanen
             let saved = localStorage.getItem('samurai_custom_devices');
             let devices = saved ? JSON.parse(saved) : [];
             if (!devices.includes(formattedName)) {
@@ -92,7 +91,7 @@ client.on('message', (topic, payload) => {
                 localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
             }
 
-            addLog(`[Sinkronisasi Cloud] Perangkat baru <b>${formattedName}</b> ditambahkan secara otomatis.`);
+            addLog(`[Sinkronisasi] Perangkat baru <b>${formattedName}</b> ditambahkan secara otomatis.`);
         }
     }
 });
@@ -164,11 +163,13 @@ function toggleDevice(element, deviceName) {
 
     if (client.connected) {
         const topic = `samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
+        console.log(`[MQTT PUBLISH] Topik: ${topic} | State: ${state}`);
         client.publish(topic, state, { qos: 0 });
+    } else {
+        console.warn("[MQTT] Tidak dapat mengirim, klien terputus.");
     }
 }
 
-// Fungsi untuk Memuat Perangkat yang Tersimpan dari LocalStorage
 function loadSavedDevices() {
     const saved = localStorage.getItem('samurai_custom_devices');
     if (saved) {
@@ -208,7 +209,6 @@ function confirmAddDevice() {
         return;
     }
 
-    // Simpan ke LocalStorage agar permanen
     let saved = localStorage.getItem('samurai_custom_devices');
     let devices = saved ? JSON.parse(saved) : [];
     if (!devices.includes(deviceName)) {
@@ -282,7 +282,6 @@ function saveSettings() {
         }
     }
 
-    // Pengaturan Pilihan 3 Video Wallpaper
     const wallpaperFileSelect = document.getElementById('wallpaperFileSelect');
     if (wallpaperFileSelect) {
         const selectedVideoUrl = wallpaperFileSelect.value;
