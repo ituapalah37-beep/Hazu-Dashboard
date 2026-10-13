@@ -1,4 +1,4 @@
-// --- KONFIGURASI MQTT CLOUD (Dengan Debugging) ---
+// --- KONFIGURASI MQTT CLOUD ---
 const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
 
@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
     if(clientIdDisplay) clientIdDisplay.textContent = clientId;
     
+    // Muat semua pengaturan & perangkat tersimpan dari LocalStorage
+    loadSavedSettings();
     loadSavedDevices();
+
     updateDateTime();
     setInterval(updateDateTime, 1000);
     fetchWeather();
@@ -29,9 +32,10 @@ client.on('connect', () => {
         mqttStatusEl.textContent = 'Terhubung (Cloud)';
         mqttStatusEl.style.color = '#4ade80';
     }
-    console.log("[MQTT] Berhasil terhubung dengan Client ID:", clientId);
+    console.log("[MQTT] Terhubung dengan ID:", clientId);
     addLog('Berhasil terhubung ke Cloud MQTT Broker.');
-    client.subscribe('samurai/control/#', { qos: 0 });
+    // Subscribe ke semua topik samurai (kontrol perangkat & pengaturan)
+    client.subscribe('samurai/#', { qos: 0 });
 });
 
 client.on('error', (err) => {
@@ -39,59 +43,100 @@ client.on('error', (err) => {
         mqttStatusEl.textContent = 'Gagal Terhubung';
         mqttStatusEl.style.color = '#f87171';
     }
-    console.error("[MQTT] Error koneksi:", err);
+    console.error("[MQTT] Error:", err);
     addLog('Koneksi MQTT Error: ' + err.message);
     client.end();
 });
 
-// Menerima pesan dari perangkat lain
+// Sinkronisasi Pesan Masuk (Perangkat & Pengaturan Lintas Perangkat)
 client.on('message', (topic, payload) => {
     const message = payload.toString();
     console.log(`[MQTT RECEIVED] Topik: ${topic} | Pesan: ${message}`);
     
     const parts = topic.split('/');
-    const deviceNameRaw = parts[parts.length - 1]; 
+    const category = parts[1]; // 'control' atau 'settings'
+    const target = parts[2];   // nama perangkat atau jenis setting
 
-    let found = false;
+    // 1. Jika pesan kontrol perangkat
+    if (category === 'control') {
+        let found = false;
+        document.querySelectorAll('.device-item').forEach(item => {
+            const spanText = item.querySelector('span');
+            if (spanText) {
+                // Bersihkan emoji dan spasi untuk pencocokan yang akurat
+                const cleanName = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
+                if (cleanName === target.replace(/_/g, ' ')) {
+                    found = true;
+                    const icon = item.querySelector('.status-icon');
+                    if (message === 'ON' && !item.classList.contains('active')) {
+                        item.classList.add('active');
+                        if(icon) icon.textContent = '🔵';
+                        addLog(`[Sinkronisasi] Perangkat diaktifkan dari perangkat lain.`);
+                    } else if (message === 'OFF' && item.classList.contains('active')) {
+                        item.classList.remove('active');
+                        if(icon) icon.textContent = '⚪';
+                        addLog(`[Sinkronisasi] Perangkat dinonaktifkan dari perangkat lain.`);
+                    }
+                }
+            }
+        });
 
-    document.querySelectorAll('.device-item').forEach(item => {
-        const spanText = item.querySelector('span');
-        if (spanText && spanText.textContent.toLowerCase().includes(deviceNameRaw.replace(/_/g, ' '))) {
-            found = true;
-            const icon = item.querySelector('.status-icon');
-            if (message === 'ON' && !item.classList.contains('active')) {
-                item.classList.add('active');
-                if(icon) icon.textContent = '🔵';
-                addLog(`[Sinkronisasi] Perangkat diaktifkan dari perangkat lain.`);
-            } else if (message === 'OFF' && item.classList.contains('active')) {
-                item.classList.remove('active');
-                if(icon) icon.textContent = '⚪';
-                addLog(`[Sinkronisasi] Perangkat dinonaktifkan dari perangkat lain.`);
+        // Buat otomatis jika perangkat belum ada di layar
+        if (!found && target) {
+            const formattedName = target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const deviceGrid = document.querySelector('.device-grid');
+            const addBtnItem = document.querySelector('.add-btn');
+
+            if (deviceGrid && addBtnItem) {
+                const newCard = document.createElement('div');
+                newCard.className = message === 'ON' ? 'device-item active' : 'device-item';
+                newCard.setAttribute('onclick', `toggleDevice(this, '${formattedName}')`);
+                newCard.innerHTML = `<span>🏮 ${formattedName}</span> <span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span>`;
+                
+                deviceGrid.insertBefore(newCard, addBtnItem);
+                
+                let saved = localStorage.getItem('samurai_custom_devices');
+                let devices = saved ? JSON.parse(saved) : [];
+                if (!devices.includes(formattedName)) {
+                    devices.push(formattedName);
+                    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+                }
+                addLog(`[Sinkronisasi] Perangkat baru <b>${formattedName}</b> ditambahkan otomatis.`);
             }
         }
-    });
+    }
 
-    if (!found && deviceNameRaw) {
-        const formattedName = deviceNameRaw.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const deviceGrid = document.querySelector('.device-grid');
-        const addBtnItem = document.querySelector('.add-btn');
-
-        if (deviceGrid && addBtnItem) {
-            const newCard = document.createElement('div');
-            newCard.className = message === 'ON' ? 'device-item active' : 'device-item';
-            newCard.setAttribute('onclick', `toggleDevice(this, '${formattedName}')`);
-            newCard.innerHTML = `<span>🏮 ${formattedName}</span> <span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span>`;
-            
-            deviceGrid.insertBefore(newCard, addBtnItem);
-            
-            let saved = localStorage.getItem('samurai_custom_devices');
-            let devices = saved ? JSON.parse(saved) : [];
-            if (!devices.includes(formattedName)) {
-                devices.push(formattedName);
-                localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+    // 2. Jika pesan pengaturan (Judul, Tema, Wallpaper) disinkronkan
+    if (category === 'settings') {
+        if (target === 'title') {
+            const headerTitle = document.querySelector('.header h1');
+            if (headerTitle) headerTitle.textContent = message;
+            localStorage.setItem('samurai_title', message);
+        } else if (target === 'theme') {
+            if (message === 'light') {
+                document.body.classList.add('light-mode');
+                localStorage.setItem('samurai_theme', 'light');
+            } else {
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('samurai_theme', 'dark');
             }
-
-            addLog(`[Sinkronisasi] Perangkat baru <b>${formattedName}</b> ditambahkan secara otomatis.`);
+        } else if (target === 'wallpaper') {
+            const videoElement = document.getElementById('wallpaperVideo');
+            const sourceElement = document.getElementById('videoSource');
+            const wallpaperCard = document.querySelector('.wallpaper-card');
+            
+            if (message === 'off') {
+                if(wallpaperCard) wallpaperCard.style.display = 'none';
+                localStorage.setItem('samurai_wallpaper_status', 'off');
+            } else {
+                if(wallpaperCard) wallpaperCard.style.display = 'block';
+                if(sourceElement && videoElement) {
+                    sourceElement.src = message;
+                    videoElement.load();
+                }
+                localStorage.setItem('samurai_wallpaper_status', 'on');
+                localStorage.setItem('samurai_wallpaper_url', message);
+            }
         }
     }
 });
@@ -163,13 +208,11 @@ function toggleDevice(element, deviceName) {
 
     if (client.connected) {
         const topic = `samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
-        console.log(`[MQTT PUBLISH] Topik: ${topic} | State: ${state}`);
         client.publish(topic, state, { qos: 0 });
-    } else {
-        console.warn("[MQTT] Tidak dapat mengirim, klien terputus.");
     }
 }
 
+// Memuat Perangkat Tersimpan dari LocalStorage
 function loadSavedDevices() {
     const saved = localStorage.getItem('samurai_custom_devices');
     if (saved) {
@@ -178,15 +221,62 @@ function loadSavedDevices() {
         const addBtnItem = document.querySelector('.add-btn');
         
         devices.forEach(deviceName => {
-            const newCard = document.createElement('div');
-            newCard.className = 'device-item';
-            newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-            newCard.innerHTML = `<span>🏮 ${deviceName}</span> <span class="status-icon">⚪</span>`;
-            
-            if(deviceGrid && addBtnItem) {
-                deviceGrid.insertBefore(newCard, addBtnItem);
+            const cleanExisting = Array.from(document.querySelectorAll('.device-item span')).some(span => 
+                span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()
+            );
+
+            if (!cleanExisting) {
+                const newCard = document.createElement('div');
+                newCard.className = 'device-item';
+                newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
+                newCard.innerHTML = `<span>🏮 ${deviceName}</span> <span class="status-icon">⚪</span>`;
+                
+                if(deviceGrid && addBtnItem) {
+                    deviceGrid.insertBefore(newCard, addBtnItem);
+                }
             }
         });
+    }
+}
+
+// Memuat Pengaturan Tersimpan dari LocalStorage saat Refresh
+function loadSavedSettings() {
+    // 1. Judul
+    const savedTitle = localStorage.getItem('samurai_title');
+    if (savedTitle) {
+        const headerTitle = document.querySelector('.header h1');
+        if (headerTitle) headerTitle.textContent = savedTitle;
+        const welcomeInput = document.getElementById('welcomeInput');
+        if (welcomeInput) welcomeInput.value = savedTitle;
+    }
+
+    // 2. Tema
+    const savedTheme = localStorage.getItem('samurai_theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        const themeSelect = document.getElementById('themeSelect');
+        if (themeSelect) themeSelect.value = 'light';
+    }
+
+    // 3. Wallpaper Status & URL
+    const wallpaperStatus = localStorage.getItem('samurai_wallpaper_status');
+    const wallpaperCard = document.querySelector('.wallpaper-card');
+    if (wallpaperStatus === 'off') {
+        if (wallpaperCard) wallpaperCard.style.display = 'none';
+        const statusSelect = document.getElementById('wallpaperStatusSelect');
+        if (statusSelect) statusSelect.value = 'off';
+    } else {
+        const savedUrl = localStorage.getItem('samurai_wallpaper_url');
+        if (savedUrl) {
+            const videoElement = document.getElementById('wallpaperVideo');
+            const sourceElement = document.getElementById('videoSource');
+            if (sourceElement && videoElement) {
+                sourceElement.src = savedUrl;
+                videoElement.load();
+            }
+            const fileSelect = document.getElementById('wallpaperFileSelect');
+            if (fileSelect) fileSelect.value = savedUrl;
+        }
     }
 }
 
@@ -228,6 +318,12 @@ function confirmAddDevice() {
         deviceGrid.insertBefore(newCard, addBtnItem);
     }
     addLog(`Perangkat baru ditambahkan: <b>${deviceName}</b>.`);
+
+    // Kirim sinyal MQTT agar perangkat ini juga muncul di HP/Laptop lain secara otomatis
+    if (client.connected) {
+        client.publish(`samurai/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0 });
+    }
+
     closeAddModal();
 }
 
@@ -242,14 +338,21 @@ function closeSettings() {
 }
 
 function saveSettings() {
+    // 1. Simpan Judul & Publish via MQTT
     const newTitleInput = document.getElementById('welcomeInput');
     if (newTitleInput && newTitleInput.value.trim()) {
         const newTitle = newTitleInput.value.trim();
         const headerTitle = document.querySelector('.header h1');
         if(headerTitle) headerTitle.textContent = newTitle;
+        localStorage.setItem('samurai_title', newTitle);
         addLog(`Teks sambutan diubah menjadi: "${newTitle}".`);
+
+        if (client.connected) {
+            client.publish('samurai/settings/title', newTitle, { qos: 0 });
+        }
     }
 
+    // 2. Simpan Wilayah
     const regionSelect = document.getElementById('regionSelect');
     if (regionSelect && regionSelect.value && regionData[regionSelect.value]) {
         currentRegionKey = regionSelect.value;
@@ -259,31 +362,45 @@ function saveSettings() {
         fetchWeather();
     }
 
+    // 3. Simpan Tema & Publish via MQTT
     const themeSelect = document.getElementById('themeSelect');
     if (themeSelect) {
-        if (themeSelect.value === 'light') {
+        const themeVal = themeSelect.value;
+        if (themeVal === 'light') {
             document.body.classList.add('light-mode');
+            localStorage.setItem('samurai_theme', 'light');
             addLog(`Tema diubah ke: <b>Light Mode (Terang)</b>.`);
         } else {
             document.body.classList.remove('light-mode');
+            localStorage.setItem('samurai_theme', 'dark');
             addLog(`Tema diubah ke: <b>Dark Mode (Gelap)</b>.`);
+        }
+
+        if (client.connected) {
+            client.publish('samurai/settings/theme', themeVal, { qos: 0 });
         }
     }
 
+    // 4. Simpan Status Wallpaper & Publish via MQTT
     const wallpaperStatusSelect = document.getElementById('wallpaperStatusSelect');
     const wallpaperCard = document.querySelector('.wallpaper-card');
     if (wallpaperStatusSelect && wallpaperCard) {
-        if (wallpaperStatusSelect.value === 'off') {
+        const statusVal = wallpaperStatusSelect.value;
+        if (statusVal === 'off') {
             wallpaperCard.style.display = 'none';
+            localStorage.setItem('samurai_wallpaper_status', 'off');
             addLog(`Live Wallpaper dinonaktifkan.`);
+            if (client.connected) client.publish('samurai/settings/wallpaper', 'off', { qos: 0 });
         } else {
             wallpaperCard.style.display = 'block';
+            localStorage.setItem('samurai_wallpaper_status', 'on');
             addLog(`Live Wallpaper diaktifkan.`);
         }
     }
 
+    // 5. Simpan URL Video Wallpaper & Publish via MQTT
     const wallpaperFileSelect = document.getElementById('wallpaperFileSelect');
-    if (wallpaperFileSelect) {
+    if (wallpaperFileSelect && wallpaperStatusSelect.value !== 'off') {
         const selectedVideoUrl = wallpaperFileSelect.value;
         const videoElement = document.getElementById('wallpaperVideo');
         const sourceElement = document.getElementById('videoSource');
@@ -294,10 +411,16 @@ function saveSettings() {
             videoElement.load();
         }
 
+        localStorage.setItem('samurai_wallpaper_url', selectedVideoUrl);
+
         if (titleElement) {
             const selectedText = wallpaperFileSelect.options[wallpaperFileSelect.selectedIndex].text;
             titleElement.textContent = selectedText + ' ⚔️';
             addLog(`Wallpaper diganti ke: <b>${selectedText}</b>.`);
+        }
+
+        if (client.connected) {
+            client.publish('samurai/settings/wallpaper', selectedVideoUrl, { qos: 0 });
         }
     }
 
@@ -332,6 +455,6 @@ async function fetchWeather() {
         const temp = Math.round(data.current.temperature_2m);
         weatherBox.textContent = `${reg.name} ⛅ ${temp}°C`;
     } catch (error) {
-        weatherBox.textContent = `${reg.name} ⛅ 28°C`;
+        weatherBox.textContent = `${reg.name} ⛅ 28$°C`;
     }
 }
