@@ -303,3 +303,50 @@ body.light-mode .device-item.active { background: #2563eb; color: white; }
 body.light-mode .modal-content { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
 body.light-mode .modal-content input, body.light-mode .modal-content select { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
 body.light-mode .log-container, body.light-mode .hardware-card, body.light-mode .log-item { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+
+/* ===================================================
+   TAMPILAN KHUSUS LAPTOP / DESKTOP (Layar > 768px)
+   =================================================== */
+@media screen and (min-width: 768px) {
+    body {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .dashboard-container {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        border: none;
+        flex-direction: row; /* Mengubah susunan jadi menyamping */
+    }
+
+    /* Sembunyikan Navigasi Bawah di Laptop */
+    .bottom-nav {
+        display: none !important;
+    }
+
+    /* Mengubah Header menjadi Sidebar di Samping Kiri untuk Laptop */
+    .header {
+        width: 240px;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 20px;
+        padding: 20px;
+        border-right: 1px solid #1f2937;
+        border-bottom: none;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 24px;
+        padding-bottom: 24px;
+    }
+
+    /* Grid perangkat di laptop menyesuaikan menjadi 4 kolom agar lebih luas */
+    .device-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+}
