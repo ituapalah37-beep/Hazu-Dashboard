@@ -121,6 +121,14 @@ client.on('message', (topic, payload) => {
         }
     }
 
+    if (category === 'status') {
+        if (target === 'card1') {
+            updateCardStatusUI(1, message === 'ON');
+        } else if (target === 'card2') {
+            updateCardStatusUI(2, message === 'ON');
+        }
+    }
+
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
@@ -243,6 +251,49 @@ function updateRfidCardStatus(cardInfo) {
         addLog(`RFID Card Scanned: <b>${cardInfo}</b>`);
         showToast(`RFID Card Detected: ${cardInfo}`, 'success');
     }
+}
+
+function updateCardStatusUI(cardNum, isActive) {
+    const box = document.getElementById(`card${cardNum}StatusBox`);
+    const text = document.getElementById(`card${cardNum}StateText`);
+    if (!box || !text) return;
+    
+    if (isActive) {
+        box.classList.add('active');
+        text.textContent = "Aktif (Sedang Digunakan)";
+        text.style.color = "#4ade80";
+    } else {
+        box.classList.remove('active');
+        text.textContent = "Standby / Off";
+        text.style.color = "#f3f4f6";
+    }
+}
+
+function openPasswordModal() {
+    document.getElementById('passwordModal').style.display = 'flex';
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+    document.getElementById('systemPasswordInput').value = '';
+}
+
+function submitSystemPassword() {
+    const pass = document.getElementById('systemPasswordInput').value;
+    if (!pass) {
+        showToast("Password tidak boleh kosong!", "warning");
+        return;
+    }
+    
+    client.publish(`${TOPIC_PREFIX}/password`, pass, (err) => {
+        if (!err) {
+            showToast("Perintah password dikirim ke sistem!", "success");
+            closePasswordModal();
+            addLog(`Remote password command sent.`);
+        } else {
+            showToast("Gagal mengirim perintah.", "warning");
+        }
+    });
 }
 
 const addModal = document.getElementById('addModal');
@@ -589,19 +640,16 @@ async function fetchWeather() {
     weatherBox.textContent = `${reg.name} ⛅ Memuat...`;
     
     try {
-        // Mengambil perkiraan cuaca harian dari API Open-Meteo
         const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&daily=temperature_2m_max,weathercode&timezone=auto`);
         const data = await response.json();
         
         forecastGrid.innerHTML = '';
         const daily = data.daily;
 
-        // Ambil data khusus HARI INI (indeks ke-0)
         const todayTemp = Math.round(daily.temperature_2m_max[0]);
         const todayCode = daily.weathercode[0];
         const todayInfo = getWeatherInfo(todayCode);
 
-        // Header dipaksa persis sama dengan kartu "HARI INI"
         weatherBox.textContent = `${reg.name} ${todayInfo.icon} ${todayTemp}°C`;
         
         for (let i = 0; i < 5; i++) {
