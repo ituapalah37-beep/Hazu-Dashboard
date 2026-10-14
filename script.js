@@ -1,6 +1,3 @@
-Menambahkan fungsi `detectClientDeviceType()` untuk mendeteksi apakah browser dijalankan dari ponsel (HP) atau komputer/laptop[cite: 1].
-
-```javascript
 // --- KONFIGURASI MQTT CLOUD (Topik Unik Privat) ---
 const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
@@ -533,4 +530,3 @@ async function fetchWeather() {
         weatherBox.textContent = `${reg.name} ⛅ 28°C`;
     }
 }
-```[cite: 1]
