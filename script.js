@@ -75,16 +75,14 @@ client.on('message', (topic, payload) => {
     const category = parts[1]; 
     const target = parts[2];   
 
-    // Sinkronisasi status perangkat masuk
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
-        // Validasi: Abaikan pesan MQTT jika perangkat sudah dihapus dari LocalStorage
         let saved = localStorage.getItem('samurai_custom_devices');
         let devices = saved ? JSON.parse(saved) : [];
         const exists = devices.some(d => d.toLowerCase() === cleanTarget);
         if (!exists) {
-            return; // Abaikan pesan dari broker untuk perangkat yang tidak ada
+            return; 
         }
 
         document.querySelectorAll('.device-item').forEach(item => {
@@ -266,7 +264,6 @@ function toggleDevice(element, deviceName) {
     }
 }
 
-// Fungsi Menghapus Perangkat
 function deleteDevice(event, deviceName) {
     event.stopPropagation(); 
     if (!confirm(`Are you sure you want to delete device "${deviceName}"?`)) return;
@@ -274,11 +271,9 @@ function deleteDevice(event, deviceName) {
     let saved = localStorage.getItem('samurai_custom_devices');
     let devices = saved ? JSON.parse(saved) : [];
     
-    // Hapus dari array LocalStorage
     devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
-    // Hapus elemen dari tampilan layar
     document.querySelectorAll('.device-item').forEach(item => {
         const spanText = item.querySelector('span');
         if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
@@ -289,25 +284,22 @@ function deleteDevice(event, deviceName) {
     addLog(`Device deleted: <b>${deviceName}</b>.`);
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
-    // Hapus retained message di broker MQTT
     if (client.connected) {
         const topic = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topic, '', { qos: 0, retain: true });
     }
 }
 
-// Memuat Perangkat Dinamis dari LocalStorage
 function loadSavedDevices() {
     const deviceGrid = document.querySelector('.device-grid');
     const addBtnItem = document.querySelector('.add-btn');
     
     let saved = localStorage.getItem('samurai_custom_devices');
-    let devices = saved ? JSON.parse(saved) : ['Main Light']; // Default awal 'Main Light'
+    let devices = saved ? JSON.parse(saved) : ['Main Light']; 
     if (!saved) {
         localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
     }
 
-    // Bersihkan kartu perangkat lama sebelum merender ulang
     document.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
 
     devices.forEach(deviceName => {
@@ -381,7 +373,6 @@ function confirmAddDevice() {
     let saved = localStorage.getItem('samurai_custom_devices');
     let devices = saved ? JSON.parse(saved) : [];
     
-    // Cek duplikat
     if (devices.some(d => d.toLowerCase() === deviceName.toLowerCase())) {
         alert('Device already exists!');
         return;
