@@ -2,6 +2,17 @@ const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
 const TOPIC_PREFIX = 'hazu_samurai_iot_999';
 
+const regionData = {
+    jakarta:    { name: 'Jakarta',    lat: -6.2088,   lon: 106.8456, tz: 'Asia/Jakarta' },
+    bandung:    { name: 'Bandung',    lat: -6.9175,   lon: 107.6191, tz: 'Asia/Jakarta' },
+    surabaya:   { name: 'Surabaya',   lat: -7.2575,   lon: 112.7521, tz: 'Asia/Jakarta' },
+    makassar:   { name: 'Makassar',   lat: -5.1477,   lon: 119.4327, tz: 'Asia/Makassar' },
+    denpasar:   { name: 'Denpasar',   lat: -8.6705,   lon: 115.2126, tz: 'Asia/Makassar' },
+    jayapura:   { name: 'Jayapura',   lat: -2.5337,   lon: 140.7186, tz: 'Asia/Jayapura' }
+};
+
+let currentRegionKey = 'makassar';
+
 document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
     if(clientIdDisplay) clientIdDisplay.textContent = clientId;
@@ -153,12 +164,16 @@ client.on('message', (topic, payload) => {
                 localStorage.setItem('samurai_wallpaper_url', message);
             }
         } else if (target === 'region') {
-            currentRegionKey = message;
-            const regionSelect = document.getElementById('regionSelect');
-            if (regionSelect) regionSelect.value = message;
-            fetchWeather();
-            updateDateTime();
-            addLog(`[Sync] Region changed to ${regionData[message].name}.`);
+            if (regionData[message]) {
+                currentRegionKey = message;
+                localStorage.setItem('samurai_region', message);
+                const regionSelect = document.getElementById('regionSelect');
+                if (regionSelect) regionSelect.value = message;
+                fetchWeather();
+                updateDateTime();
+                addLog(`[Sync] Region changed to ${regionData[message].name}.`);
+                showToast(`Region synced: ${regionData[message].name}`, 'info');
+            }
         }
     }
 
@@ -206,17 +221,6 @@ function updateRfidCardStatus(cardInfo) {
 
 const addModal = document.getElementById('addModal');
 const settingsModal = document.getElementById('settingsModal');
-
-const regionData = {
-    jakarta:    { name: 'Jakarta',    lat: -6.2088,   lon: 106.8456, tz: 'Asia/Jakarta' },
-    bandung:    { name: 'Bandung',    lat: -6.9175,   lon: 107.6191, tz: 'Asia/Jakarta' },
-    surabaya:   { name: 'Surabaya',   lat: -7.2575,   lon: 112.7521, tz: 'Asia/Jakarta' },
-    makassar:   { name: 'Makassar',   lat: -5.1477,   lon: 119.4327, tz: 'Asia/Makassar' },
-    denpasar:   { name: 'Denpasar',   lat: -8.6705,   lon: 115.2126, tz: 'Asia/Makassar' },
-    jayapura:   { name: 'Jayapura',   lat: -2.5337,   lon: 140.7186, tz: 'Asia/Jayapura' }
-};
-
-let currentRegionKey = 'makassar';
 
 function switchView(viewName, element) {
     document.querySelectorAll('.sidebar .menu-item').forEach(item => {
@@ -291,10 +295,8 @@ function deleteDevice(event, deviceName) {
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
     if (client.connected) {
-        // Publikasikan daftar perangkat terbaru ke broker (Retained) agar HP dan Laptop sinkron
         client.publish(`${TOPIC_PREFIX}/manage/list`, JSON.stringify(devices), { qos: 0, retain: true });
         
-        // Hapus pesan status kontrol perangkat
         const topicControl = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topicControl, '', { qos: 0, retain: true });
     }
@@ -308,9 +310,9 @@ function loadSavedDevices() {
     }
 
     const deviceGrid = document.getElementById('deviceGrid');
+    if (!deviceGrid) return;
     const addBtnItem = deviceGrid.querySelector('.add-btn');
 
-    // Hapus semua kartu perangkat kecuali tombol add
     deviceGrid.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
 
     devices.forEach(deviceName => {
@@ -319,11 +321,22 @@ function loadSavedDevices() {
         newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
         newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
         
-        deviceGrid.insertBefore(newCard, addBtnItem);
+        if (addBtnItem) {
+            deviceGrid.insertBefore(newCard, addBtnItem);
+        } else {
+            deviceGrid.appendChild(newCard);
+        }
     });
 }
 
 function loadSavedSettings() {
+    const savedRegion = localStorage.getItem('samurai_region');
+    if (savedRegion && regionData[savedRegion]) {
+        currentRegionKey = savedRegion;
+        const regionSelect = document.getElementById('regionSelect');
+        if (regionSelect) regionSelect.value = savedRegion;
+    }
+
     const savedTitle = localStorage.getItem('samurai_title');
     if (savedTitle) {
         const headerTitle = document.getElementById('header-main-title');
@@ -395,7 +408,6 @@ function confirmAddDevice() {
     showToast(`Device "${deviceName}" successfully added`, 'success');
 
     if (client.connected) {
-        // Kirim daftar perangkat terbaru ke broker (Retained)
         client.publish(`${TOPIC_PREFIX}/manage/list`, JSON.stringify(devices), { qos: 0, retain: true });
         client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
     }
@@ -431,6 +443,7 @@ function saveSettings() {
     const regionSelect = document.getElementById('regionSelect');
     if (regionSelect && regionSelect.value && regionData[regionSelect.value]) {
         currentRegionKey = regionSelect.value;
+        localStorage.setItem('samurai_region', currentRegionKey);
         const regName = regionData[currentRegionKey].name;
         addLog(`Active region changed to: <b>${regName}</b>.`);
         updateDateTime();
@@ -528,7 +541,6 @@ async function fetchWeather() {
         const currentTemp = Math.round(data.current.temperature_2m);
         weatherBox.textContent = `${reg.name} ⛅ ${currentTemp}°C`;
 
-        // Render 5-Day Forecast Grid sesuai data meteorologi wilayah
         forecastGrid.innerHTML = '';
         const daily = data.daily;
         
