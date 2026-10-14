@@ -86,7 +86,6 @@ client.on('message', (topic, payload) => {
     const category = parts[1]; 
     const target = parts[2];   
 
-    // SINKRONISASI DAFTAR PERANGKAT MELALUI MQTT RETAINED ARRAY LIST
     if (category === 'manage' && target === 'list') {
         try {
             const serverDevices = JSON.parse(message);
@@ -100,10 +99,12 @@ client.on('message', (topic, payload) => {
         }
     }
 
-    // SINKRONISASI KONTROL STATUS (ON / OFF)
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
+        let activeSaved = localStorage.getItem('samurai_active_states');
+        let activeSet = activeSaved ? new Set(JSON.parse(activeSaved)) : new Set();
+
         document.querySelectorAll('.device-item').forEach(item => {
             const spanText = item.querySelector('span');
             if (spanText) {
@@ -113,15 +114,18 @@ client.on('message', (topic, payload) => {
                     if (message === 'ON' && !item.classList.contains('active')) {
                         item.classList.add('active');
                         if(icon) icon.textContent = '🔵';
+                        activeSet.add(cleanName);
                         addLog(`[Sync] Device "${cleanName}" turned ON.`);
                     } else if (message === 'OFF' && item.classList.contains('active')) {
                         item.classList.remove('active');
                         if(icon) icon.textContent = '⚪';
+                        activeSet.delete(cleanName);
                         addLog(`[Sync] Device "${cleanName}" turned OFF.`);
                     }
                 }
             }
         });
+        localStorage.setItem('samurai_active_states', JSON.stringify(Array.from(activeSet)));
     }
 
     if (category === 'settings') {
@@ -263,17 +267,25 @@ function toggleDevice(element, deviceName) {
     const icon = element.querySelector('.status-icon');
     let state = 'OFF';
     
+    let activeSaved = localStorage.getItem('samurai_active_states');
+    let activeSet = activeSaved ? new Set(JSON.parse(activeSaved)) : new Set();
+    const cleanName = deviceName.toLowerCase();
+
     if (element.classList.contains('active')) {
         if(icon) icon.textContent = '🔵';
         state = 'ON';
+        activeSet.add(cleanName);
         addLog(`Device <b>${deviceName}</b> turned ON.`);
         showToast(`Device "${deviceName}" turned ON`, 'success');
     } else {
         if(icon) icon.textContent = '⚪';
         state = 'OFF';
+        activeSet.delete(cleanName);
         addLog(`Device <b>${deviceName}</b> turned OFF.`);
         showToast(`Device "${deviceName}" turned OFF`, 'info');
     }
+
+    localStorage.setItem('samurai_active_states', JSON.stringify(Array.from(activeSet)));
 
     if (client.connected) {
         const topic = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
@@ -289,6 +301,11 @@ function deleteDevice(event, deviceName) {
     let devices = saved ? JSON.parse(saved) : ['Main Light'];
     devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+
+    let activeSaved = localStorage.getItem('samurai_active_states');
+    let activeSet = activeSaved ? new Set(JSON.parse(activeSaved)) : new Set();
+    activeSet.delete(deviceName.toLowerCase());
+    localStorage.setItem('samurai_active_states', JSON.stringify(Array.from(activeSet)));
 
     loadSavedDevices();
     addLog(`Device deleted: <b>${deviceName}</b>.`);
@@ -309,25 +326,18 @@ function loadSavedDevices() {
         localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
     }
 
+    let activeSaved = localStorage.getItem('samurai_active_states');
+    let activeSet = activeSaved ? new Set(JSON.parse(activeSaved)) : new Set();
+
     const deviceGrid = document.getElementById('deviceGrid');
     if (!deviceGrid) return;
     const addBtnItem = deviceGrid.querySelector('.add-btn');
-
-    // Simpan daftar perangkat yang sedang aktif (ON) sebelum dirender ulang
-    const activeDevices = new Set();
-    deviceGrid.querySelectorAll('.device-item.active').forEach(el => {
-        const spanText = el.querySelector('span');
-        if (spanText) {
-            const name = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
-            activeDevices.add(name);
-        }
-    });
 
     deviceGrid.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
 
     devices.forEach(deviceName => {
         const cleanName = deviceName.toLowerCase();
-        const isActive = activeDevices.has(cleanName);
+        const isActive = activeSet.has(cleanName);
 
         const newCard = document.createElement('div');
         newCard.className = isActive ? 'device-item active' : 'device-item';
