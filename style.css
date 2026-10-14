@@ -65,8 +65,8 @@ body {
 }
 
 .dashboard-container {
-    width: 950px;
-    height: 640px;
+    width: 980px;
+    height: 700px;
     background-color: #111827;
     border-radius: 25px;
     display: flex;
@@ -110,18 +110,18 @@ body {
 
 .main-content {
     flex: 1;
-    padding: 25px 30px;
+    padding: 20px 30px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .view-section {
     display: none;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     flex: 1;
 }
 
@@ -139,21 +139,38 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid #1f2937;
+    padding-bottom: 10px;
 }
 
 .header h1 {
-    font-size: 22px;
+    font-size: 20px;
     color: #f9fafb;
     transition: color 0.3s ease;
 }
 
+.sub-datetime-box {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.sub-datetime-box .clock-text {
+    color: #38bdf8;
+    font-weight: bold;
+}
+
+.sub-datetime-box .date-text {
+    font-weight: 600;
+    color: #d1d5db;
+}
+
 .wallpaper-card {
     width: 100%;
-    height: 180px;
-    border-radius: 15px;
+    height: 140px;
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
-    padding: 0 !important;
     border: 1px solid #374151;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     background: #1f2937;
@@ -168,7 +185,7 @@ body {
 .rfid-card-panel {
     background: #1f2937;
     border: 1px solid #374151;
-    padding: 10px 15px;
+    padding: 8px 15px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -177,9 +194,9 @@ body {
 }
 
 .rfid-icon {
-    font-size: 24px;
+    font-size: 22px;
     background: rgba(59, 130, 246, 0.15);
-    padding: 8px;
+    padding: 6px;
     border-radius: 8px;
 }
 
@@ -191,21 +208,21 @@ body {
 }
 
 .rfid-label {
-    font-size: 11px;
+    font-size: 10px;
     color: #9ca3af;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .rfid-value {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #f3f4f6;
 }
 
 .rfid-badge {
-    font-size: 11px;
-    padding: 4px 10px;
+    font-size: 10px;
+    padding: 3px 8px;
     border-radius: 20px;
     font-weight: bold;
 }
@@ -214,21 +231,21 @@ body {
 .rfid-badge.active { background: #059669; color: #d1fae5; box-shadow: 0 0 10px rgba(5,150,105,0.5); }
 
 .device-section h3 {
-    font-size: 14px;
+    font-size: 13px;
     color: #f3f4f6;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .device-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
 }
 
 .device-item {
     background: #1f2937;
     border: 1px solid #374151;
-    padding: 10px;
+    padding: 8px 10px;
     border-radius: 10px;
     font-size: 12px;
     color: #f3f4f6;
@@ -263,7 +280,7 @@ body {
     border: none;
     color: #f87171;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     padding: 2px 4px;
     border-radius: 4px;
     transition: 0.2s;
@@ -284,6 +301,95 @@ body {
 .device-item.add-btn:hover {
     background: #1f2937;
     border-color: #3b82f6;
+}
+
+/* WIDGET PERKIRAAN CUACA FUTURISTIK & MODERN */
+.forecast-section {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+.forecast-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 5px;
+}
+
+.forecast-news-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.forecast-title-text {
+    font-size: 11px;
+    font-weight: bold;
+    color: #93c5fd;
+    letter-spacing: 1px;
+}
+
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.forecast-card {
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.forecast-card:hover {
+    transform: translateY(-2px);
+    border-color: #3b82f6;
+    background: rgba(30, 58, 138, 0.4);
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.25);
+}
+
+.forecast-day {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+}
+
+.forecast-icon {
+    font-size: 22px;
+    margin: 4px 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.forecast-temp {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f9fafb;
+}
+
+.forecast-desc {
+    font-size: 9px;
+    color: #60a5fa;
+    margin-top: 2px;
 }
 
 .log-container {
@@ -352,30 +458,14 @@ body {
     font-size: 13px;
 }
 
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 5px;
-}
-
-.date-text {
-    font-size: 13px;
-    font-weight: bold;
-    color: #9ca3af;
-}
-
-.clock-text {
-    font-size: 14px;
-    font-weight: bold;
-    color: #38bdf8;
-}
-
 .weather-box {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: bold;
     color: #60a5fa;
+    background: rgba(31, 41, 55, 0.8);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .modal {
@@ -466,6 +556,9 @@ body.light-mode .sidebar { background: linear-gradient(180deg, #3b82f6, #1d4ed8)
 body.light-mode .menu-item { color: #dbeafe; }
 body.light-mode .menu-item.active, body.light-mode .menu-item:hover { color: #ffffff; }
 body.light-mode .header h1 { color: #1e293b; }
+body.light-mode .sub-datetime-box { color: #64748b; }
+body.light-mode .sub-datetime-box .clock-text { color: #0284c7; }
+body.light-mode .sub-datetime-box .date-text { color: #1e293b; }
 body.light-mode .wallpaper-card { border-color: #cbd5e1; background: #f1f5f9; }
 body.light-mode .rfid-card-panel { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
 body.light-mode .rfid-label { color: #64748b; }
@@ -475,12 +568,16 @@ body.light-mode .device-section h3 { color: #1e293b; }
 body.light-mode .device-item { background: #f8fafc; border-color: #e2e8f0; color: #1e293b; }
 body.light-mode .device-item.active { background: #2563eb; color: white; }
 body.light-mode .device-item.add-btn { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }
+body.light-mode .forecast-section { background: linear-gradient(135deg, rgba(241, 245, 249, 0.9), rgba(226, 232, 240, 0.9)); border-color: #cbd5e1; }
+body.light-mode .forecast-title-text { color: #2563eb; }
+body.light-mode .forecast-card { background: #ffffff; border-color: #cbd5e1; }
+body.light-mode .forecast-day { color: #475569; }
+body.light-mode .forecast-temp { color: #1e293b; }
+body.light-mode .forecast-desc { color: #2563eb; }
 body.light-mode .log-container, body.light-mode .hardware-card { background: #f8fafc; border-color: #cbd5e1; }
 body.light-mode .log-item { background: #ffffff; border-color: #e2e8f0; color: #1e293b; }
 body.light-mode .hw-info h4 { color: #1e293b; }
-body.light-mode .date-text { color: #64748b; }
-body.light-mode .clock-text { color: #0284c7; }
-body.light-mode .weather-box { color: #2563eb; }
+body.light-mode .weather-box { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }
 body.light-mode .view-section h2 { color: #1e293b !important; }
 body.light-mode .modal-content { background: #ffffff; border-color: #cbd5e1; }
 body.light-mode .modal-content h3 { color: #1e293b; }
@@ -495,7 +592,6 @@ body.light-mode .toast-notification {
     border-color: #cbd5e1;
 }
 
-/* PERBAIKAN TATA LETAK MOBILE AGAR DAPAT DIGULIR (SCROLL) DENGAN BAIK */
 @media (max-width: 768px) {
     body {
         align-items: flex-start;
@@ -554,11 +650,11 @@ body.light-mode .toast-notification {
         height: auto !important;
         overflow-y: visible !important;
         padding: 12px 15px 30px 15px;
-        gap: 12px;
+        gap: 10px;
     }
 
     .header h1 {
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .device-grid {
@@ -566,7 +662,32 @@ body.light-mode .toast-notification {
     }
 
     .wallpaper-card {
-        height: 150px;
+        height: 130px;
+    }
+
+    .forecast-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+    }
+
+    .forecast-card {
+        padding: 6px 2px;
+    }
+
+    .forecast-day {
+        font-size: 8px;
+    }
+
+    .forecast-icon {
+        font-size: 18px;
+    }
+
+    .forecast-temp {
+        font-size: 11px;
+    }
+
+    .forecast-desc {
+        font-size: 7px;
     }
 
     .modal-content {
