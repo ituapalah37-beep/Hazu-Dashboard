@@ -45,19 +45,23 @@
             <div id="rfid-badge" class="rfid-badge idle">Standby</div>
           </div>
 
-          <!-- 2 Kotak Persegi Indikator Status Kartu RFID yang Bersandingan -->
+          <!-- 2 Kotak Kartu Berdiri Berdampingan Sesuai Sketsa -->
           <div class="rfid-status-grid">
               <div class="rfid-status-card" id="card1StatusBox">
-                  <div class="card-icon-center">💳</div>
-                  <span class="card-title">KARTU 1 (MAIN SYSTEM - D14)</span>
-                  <span class="card-state" id="card1StateText">Standby / Off</span>
-                  <button class="btn-pass-unlock" onclick="openPasswordModal()">🔒 Unlock</button>
+                  <span class="card-title">First access</span>
+                  <div class="card-center-content">
+                      <div class="card-icon-center">💳</div>
+                      <span class="card-state" id="card1StateText">Standby / Off</span>
+                  </div>
+                  <button class="btn-pass-unlock" onclick="openPasswordModal()">Unlock</button>
               </div>
               
               <div class="rfid-status-card" id="card2StatusBox">
-                  <div class="card-icon-center">💳</div>
-                  <span class="card-title">KARTU 2 (DEVICE 2 - D27)</span>
-                  <span class="card-state" id="card2StateText">Standby / Off</span>
+                  <span class="card-title">Second access</span>
+                  <div class="card-center-content">
+                      <div class="card-icon-center">💳</div>
+                      <span class="card-state" id="card2StateText">Standby / Off</span>
+                  </div>
               </div>
           </div>
 
