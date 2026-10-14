@@ -25,60 +25,64 @@ body {
 
 .toast-container {
     position: fixed;
-    top: 15px;
+    top: 12px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 99999;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     pointer-events: none;
     width: 100%;
-    max-width: 450px;
+    max-width: 420px;
 }
 
 .toast-notification {
-    background: rgba(11, 15, 25, 0.88);
-    color: #f3f4f6;
+    background: #000000;
+    color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 10px 22px;
-    border-radius: 50px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    padding: 8px 18px;
+    border-radius: 32px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25);
     font-size: 13px;
+    font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     pointer-events: auto;
-    animation: dynamicIslandPop 3.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    backdrop-filter: blur(16px);
+    animation: dynamicIslandApple 3.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     white-space: nowrap;
 }
 
-.toast-notification.success { border-top: 2px solid #4ade80; }
-.toast-notification.info { border-top: 2px solid #38bdf8; }
-.toast-notification.warning { border-top: 2px solid #facc15; }
+/* Menghilangkan border berwarna di atas agar tampil bersih seperti kapsul hardware */
+.toast-notification.success, 
+.toast-notification.info, 
+.toast-notification.warning { 
+    border-top: 1px solid rgba(255, 255, 255, 0.15); 
+}
 
-@keyframes dynamicIslandPop {
+@keyframes dynamicIslandApple {
     0% {
         opacity: 0;
-        transform: scale(0.4) translateY(-25px);
-        max-width: 60px;
+        transform: scale(0.25) translateY(-20px);
+        max-width: 40px;
+        min-height: 28px;
     }
-    18% {
+    15% {
         opacity: 1;
         transform: scale(1) translateY(0);
-        max-width: 450px;
+        max-width: 420px;
     }
-    82% {
+    85% {
         opacity: 1;
         transform: scale(1) translateY(0);
-        max-width: 450px;
+        max-width: 420px;
     }
     100% {
         opacity: 0;
-        transform: scale(0.7) translateY(-15px);
-        max-width: 60px;
+        transform: scale(0.4) translateY(-10px);
+        max-width: 40px;
     }
 }
 
