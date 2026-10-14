@@ -14,6 +14,8 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 
 @keyframes gradientAnimation {
@@ -22,7 +24,7 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* --- TOAST POPUP NOTIFICATION (Diperkuat untuk Laptop/Desktop) --- */
+/* --- TOAST POPUP NOTIFICATION --- */
 .toast-container {
     position: fixed;
     top: 30px;
@@ -133,7 +135,6 @@ body {
     display: flex;
 }
 
-/* Mengubah warna teks judul (h2) menjadi putih terang di Dark Mode */
 .view-section h2 {
     font-size: 18px;
     color: #f9fafb !important;
@@ -495,18 +496,22 @@ body.light-mode .toast-notification {
     body {
         align-items: flex-start;
         height: 100vh;
+        width: 100vw;
         background: #111827;
         padding: 0;
         margin: 0;
+        overflow: hidden;
     }
 
     .dashboard-container {
-        width: 100vw;
+        width: 100% !important;
         height: 100vh;
+        max-width: 100% !important;
         border-radius: 0;
         border: none;
         flex-direction: column-reverse;
         box-shadow: none;
+        margin: 0;
     }
 
     .sidebar {
