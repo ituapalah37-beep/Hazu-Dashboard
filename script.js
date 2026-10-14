@@ -75,7 +75,6 @@ client.on('message', (topic, payload) => {
     const category = parts[1]; 
     const target = parts[2];   
 
-    // SINKRONISASI MANAJEMEN PERANGKAT (ADD & DELETE)
     if (category === 'manage') {
         if (target === 'add') {
             const deviceName = message;
@@ -108,7 +107,6 @@ client.on('message', (topic, payload) => {
         }
     }
 
-    // SINKRONISASI KONTROL STATUS (ON / OFF)
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
@@ -309,9 +307,7 @@ function deleteDevice(event, deviceName) {
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
     if (client.connected) {
-        // Kirim sinyal delete lewat topik manajemen khusus
         client.publish(`${TOPIC_PREFIX}/manage/delete`, deviceName, { qos: 0, retain: false });
-        // Bersihkan retained message kontrol
         const topicControl = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topicControl, '', { qos: 0, retain: true });
     }
@@ -321,7 +317,6 @@ function renderDeviceCard(deviceName) {
     const deviceGrid = document.querySelector('.device-grid');
     const addBtnItem = document.querySelector('.add-btn');
 
-    // Cek apakah elemen sudah ada di layar
     const exists = Array.from(document.querySelectorAll('.device-item span')).some(span => 
         span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()
     );
@@ -423,7 +418,6 @@ function confirmAddDevice() {
     showToast(`Device "${deviceName}" successfully added`, 'success');
 
     if (client.connected) {
-        // Kirim sinyal add lewat topik manajemen khusus agar HP/Laptop lain langsung menerima
         client.publish(`${TOPIC_PREFIX}/manage/add`, deviceName, { qos: 0, retain: false });
         client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
     }
@@ -530,7 +524,7 @@ function updateDateTime() {
     const reg = regionData[currentRegionKey];
     const now = new Date();
     
-    const dateOptions = { timeZone: reg.tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    const dateOptions = { timeZone: reg.tz, weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' };
     dateElement.textContent = now.toLocaleDateString('en-GB', dateOptions);
     
     const timeOptions = { timeZone: reg.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
@@ -539,17 +533,47 @@ function updateDateTime() {
 
 async function fetchWeather() {
     const weatherBox = document.querySelector('.weather-box');
-    if(!weatherBox) return;
+    const forecastGrid = document.getElementById('forecastGrid');
+    if(!weatherBox || !forecastGrid) return;
     
     const reg = regionData[currentRegionKey];
-    weatherBox.textContent = `${reg.name} ⛅ Loading weather...`;
+    weatherBox.textContent = `${reg.name} ⛅ Loading...`;
     
     try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m`);
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m&daily=temperature_2m_max,weathercode&timezone=auto`);
         const data = await response.json();
-        const temp = Math.round(data.current.temperature_2m);
-        weatherBox.textContent = `${reg.name} ⛅ ${temp}°C`;
+        
+        const currentTemp = Math.round(data.current.temperature_2m);
+        weatherBox.textContent = `${reg.name} ⛅ ${currentTemp}°C`;
+
+        // Render 5-Day Forecast Grid
+        forecastGrid.innerHTML = '';
+        const daily = data.daily;
+        
+        for (let i = 0; i < 5; i++) {
+            const dateObj = new Date(daily.time[i]);
+            const dayName = i === 0 ? 'TODAY' : dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+            const temp = Math.round(daily.temperature_2m_max[i]);
+            const code = daily.weathercode[i];
+
+            let icon = '☀️';
+            let desc = 'SUNNY';
+            if (code >= 1 && code <= 3) { icon = '⛅'; desc = 'CLOUDY'; }
+            else if (code >= 51 && code <= 67) { icon = '🌧️'; desc = 'RAIN'; }
+            else if (code >= 95) { icon = '⚡'; desc = 'STORM'; }
+
+            const card = document.createElement('div');
+            card.className = 'forecast-card';
+            card.innerHTML = `
+                <span class="forecast-day">${dayName}</span>
+                <span class="forecast-icon">${icon}</span>
+                <span class="forecast-temp">${temp}°C</span>
+                <span class="forecast-desc">${desc}</span>
+            `;
+            forecastGrid.appendChild(card);
+        }
     } catch (error) {
         weatherBox.textContent = `${reg.name} ⛅ 28°C`;
+        forecastGrid.innerHTML = '<div style="grid-column: span 5; text-align: center; font-size: 11px; color: #9ca3af;">Forecast unavailable</div>';
     }
 }
