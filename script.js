@@ -78,24 +78,17 @@ client.on('message', (topic, payload) => {
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
-        // 1. Cek apakah perangkat ada di daftar hitam (blacklist) yang telah dihapus
         let deletedSaved = localStorage.getItem('samurai_deleted_devices');
         let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
         if (deletedDevices.includes(cleanTarget)) {
             return; 
         }
 
-        // 2. Jika pesan khusus penghapusan lintas perangkat (OFF_DELETED)
         if (message === 'OFF_DELETED') {
             let saved = localStorage.getItem('samurai_custom_devices');
             let devices = saved ? JSON.parse(saved) : [];
             devices = devices.filter(d => d.toLowerCase() !== cleanTarget);
             localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
-
-            if (!deletedDevices.includes(cleanTarget)) {
-                deletedDevices.push(cleanTarget);
-                localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
-            }
 
             document.querySelectorAll('.device-item').forEach(item => {
                 const spanText = item.querySelector('span');
@@ -130,8 +123,7 @@ client.on('message', (topic, payload) => {
             }
         });
 
-        // 3. Jika perangkat belum ada di layar, buat otomatis (Sinkronisasi Penambahan / Kontrol Lintas Perangkat)
-        if (!found && target && message !== '') {
+        if (!found && target && message !== '' && message !== 'OFF_DELETED') {
             const formattedName = target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             const deviceGrid = document.querySelector('.device-grid');
             const addBtnItem = document.querySelector('.add-btn');
@@ -146,7 +138,7 @@ client.on('message', (topic, payload) => {
                 
                 let saved = localStorage.getItem('samurai_custom_devices');
                 let devices = saved ? JSON.parse(saved) : [];
-                if (!devices.includes(formattedName)) {
+                if (!devices.some(d => d.toLowerCase() === cleanTarget)) {
                     devices.push(formattedName);
                     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
                 }
