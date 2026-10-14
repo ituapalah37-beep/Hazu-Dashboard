@@ -25,43 +25,61 @@ body {
 
 .toast-container {
     position: fixed;
-    top: 30px;
-    right: 30px;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 99999;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-width: 360px;
+    align-items: center;
+    gap: 10px;
     pointer-events: none;
+    width: 100%;
+    max-width: 450px;
 }
 
 .toast-notification {
-    background: #1f2937;
+    background: rgba(11, 15, 25, 0.88);
     color: #f3f4f6;
-    border: 1px solid #374151;
-    padding: 14px 18px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-    font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px 22px;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    font-size: 13px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     pointer-events: auto;
-    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 3.5s forwards;
-    backdrop-filter: blur(10px);
+    animation: dynamicIslandPop 3.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    backdrop-filter: blur(16px);
+    white-space: nowrap;
 }
 
-.toast-notification.success { border-left: 5px solid #4ade80; }
-.toast-notification.info { border-left: 5px solid #38bdf8; }
-.toast-notification.warning { border-left: 5px solid #facc15; }
+.toast-notification.success { border-top: 2px solid #4ade80; }
+.toast-notification.info { border-top: 2px solid #38bdf8; }
+.toast-notification.warning { border-top: 2px solid #facc15; }
 
-@keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes fadeOut {
-    to { opacity: 0; transform: translateY(-10px); }
+@keyframes dynamicIslandPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.4) translateY(-25px);
+        max-width: 60px;
+    }
+    18% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        max-width: 450px;
+    }
+    82% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        max-width: 450px;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.7) translateY(-15px);
+        max-width: 60px;
+    }
 }
 
 .dashboard-container {
@@ -584,9 +602,9 @@ body.light-mode .modal-content select option { background-color: #ffffff; color:
 body.light-mode .setting-item { color: #475569; }
 body.light-mode .btn-cancel { background: #e2e8f0; color: #475569; }
 body.light-mode .toast-notification {
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.92);
     color: #1e293b;
-    border-color: #cbd5e1;
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
@@ -659,7 +677,7 @@ body.light-mode .toast-notification {
     }
 
     .wallpaper-card {
-        height: 120px;
+        height: 200px;
     }
 
     .forecast-grid {
