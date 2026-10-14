@@ -3,12 +3,34 @@ const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
 const TOPIC_PREFIX = 'hazu_samurai_iot_999';
 
 const regionData = {
-    jakarta:    { name: 'Jakarta',    lat: -6.2088,   lon: 106.8456, tz: 'Asia/Jakarta' },
-    bandung:    { name: 'Bandung',    lat: -6.9175,   lon: 107.6191, tz: 'Asia/Jakarta' },
-    surabaya:   { name: 'Surabaya',   lat: -7.2575,   lon: 112.7521, tz: 'Asia/Jakarta' },
-    makassar:   { name: 'Makassar',   lat: -5.1477,   lon: 119.4327, tz: 'Asia/Makassar' },
-    denpasar:   { name: 'Denpasar',   lat: -8.6705,   lon: 115.2126, tz: 'Asia/Makassar' },
-    jayapura:   { name: 'Jayapura',   lat: -2.5337,   lon: 140.7186, tz: 'Asia/Jayapura' }
+    jakarta:      { name: 'Jakarta',        lat: -6.2088,   lon: 106.8456, tz: 'Asia/Jakarta' },
+    bandung:      { name: 'Bandung',        lat: -6.9175,   lon: 107.6191, tz: 'Asia/Jakarta' },
+    bekasi:       { name: 'Bekasi',         lat: -6.2383,   lon: 106.9756, tz: 'Asia/Jakarta' },
+    depok:        { name: 'Depok',          lat: -6.4025,   lon: 106.7942, tz: 'Asia/Jakarta' },
+    bogor:        { name: 'Bogor',          lat: -6.5971,   lon: 106.8060, tz: 'Asia/Jakarta' },
+    semarang:     { name: 'Semarang',       lat: -6.9667,   lon: 110.4167, tz: 'Asia/Jakarta' },
+    surakarta:    { name: 'Surakarta',      lat: -7.5755,   lon: 110.8243, tz: 'Asia/Jakarta' },
+    surabaya:     { name: 'Surabaya',       lat: -7.2575,   lon: 112.7521, tz: 'Asia/Jakarta' },
+    malang:       { name: 'Malang',         lat: -7.9666,   lon: 112.6326, tz: 'Asia/Jakarta' },
+    yogyakarta:   { name: 'Yogyakarta',     lat: -7.7956,   lon: 110.3695, tz: 'Asia/Jakarta' },
+    serang:       { name: 'Serang',         lat: -6.1154,   lon: 106.1503, tz: 'Asia/Jakarta' },
+    tangerang:    { name: 'Tangerang',      lat: -6.1783,   lon: 106.6319, tz: 'Asia/Jakarta' },
+    medan:        { name: 'Medan',          lat: 3.5952,    lon: 98.6722,  tz: 'Asia/Jakarta' },
+    padang:       { name: 'Padang',         lat: -0.9471,   lon: 100.4172, tz: 'Asia/Jakarta' },
+    pekanbaru:    { name: 'Pekanbaru',      lat: 0.5071,    lon: 101.4478, tz: 'Asia/Jakarta' },
+    batam:        { name: 'Batam',          lat: 1.0456,    lon: 104.0305, tz: 'Asia/Jakarta' },
+    palembang:    { name: 'Palembang',      lat: -2.9909,   lon: 104.7565, tz: 'Asia/Jakarta' },
+    bandarlampung:{ name: 'Bandar Lampung', lat: -5.4297,   lon: 105.2611, tz: 'Asia/Jakarta' },
+    denpasar:     { name: 'Denpasar',       lat: -8.6705,   lon: 115.2126, tz: 'Asia/Makassar' },
+    mataram:      { name: 'Mataram',        lat: -8.5833,   lon: 116.1167, tz: 'Asia/Makassar' },
+    kupang:       { name: 'Kupang',         lat: -10.1772,  lon: 123.6070, tz: 'Asia/Makassar' },
+    banjarmasin:  { name: 'Banjarmasin',    lat: -3.3186,   lon: 114.5936, tz: 'Asia/Makassar' },
+    samarinda:    { name: 'Samarinda',      lat: -0.5022,   lon: 117.1536, tz: 'Asia/Makassar' },
+    balikpapan:   { name: 'Balikpapan',     lat: -1.2379,   lon: 116.8529, tz: 'Asia/Makassar' },
+    makassar:     { name: 'Makassar',       lat: -5.1477,   lon: 119.4327, tz: 'Asia/Makassar' },
+    manado:       { name: 'Manado',         lat: 1.4748,    lon: 124.8421, tz: 'Asia/Makassar' },
+    ambon:        { name: 'Ambon',          lat: -3.6556,   lon: 128.1908, tz: 'Asia/Jayapura' },
+    jayapura:     { name: 'Jayapura',       lat: -2.5337,   lon: 140.7186, tz: 'Asia/Jayapura' }
 };
 
 let currentRegionKey = 'makassar';
@@ -549,6 +571,16 @@ function updateDateTime() {
     clockElement.textContent = now.toLocaleTimeString('en-GB', timeOptions);
 }
 
+// Fungsi bantuan terpusat agar ikon dan deskripsi cuaca selalu sinkron antara header dan kartu prakiraan
+function getWeatherInfo(code) {
+    let icon = '☀️';
+    let desc = 'CERAH';
+    if (code >= 1 && code <= 3) { icon = '⛅'; desc = 'BERAWAN'; }
+    else if (code >= 51 && code <= 67) { icon = '🌧️'; desc = 'HUJAN'; }
+    else if (code >= 95) { icon = '⚡'; desc = 'BADAI'; }
+    return { icon, desc };
+}
+
 async function fetchWeather() {
     const weatherBox = document.querySelector('.weather-box');
     const forecastGrid = document.getElementById('forecastGrid');
@@ -562,7 +594,11 @@ async function fetchWeather() {
         const data = await response.json();
         
         const currentTemp = Math.round(data.current.temperature_2m);
-        weatherBox.textContent = `${reg.name} ⛅ ${currentTemp}°C`;
+        const currentWeatherCode = data.current.weathercode;
+        const currentInfo = getWeatherInfo(currentWeatherCode);
+
+        // Tampilkan suhu dan ikon cuaca di header secara sinkron
+        weatherBox.textContent = `${reg.name} ${currentInfo.icon} ${currentTemp}°C`;
 
         forecastGrid.innerHTML = '';
         const daily = data.daily;
@@ -572,20 +608,15 @@ async function fetchWeather() {
             const dayName = i === 0 ? 'HARI INI' : dateObj.toLocaleDateString('id-ID', { weekday: 'short' }).toUpperCase();
             const temp = Math.round(daily.temperature_2m_max[i]);
             const code = daily.weathercode[i];
-
-            let icon = '☀️';
-            let desc = 'CERAH';
-            if (code >= 1 && code <= 3) { icon = '⛅'; desc = 'BERAWAN'; }
-            else if (code >= 51 && code <= 67) { icon = '🌧️'; desc = 'HUJAN'; }
-            else if (code >= 95) { icon = '⚡'; desc = 'BADAI'; }
+            const info = getWeatherInfo(code);
 
             const card = document.createElement('div');
             card.className = 'forecast-card';
             card.innerHTML = `
                 <span class="forecast-day">${dayName}</span>
-                <span class="forecast-icon">${icon}</span>
+                <span class="forecast-icon">${info.icon}</span>
                 <span class="forecast-temp">${temp}°C</span>
-                <span class="forecast-desc">${desc}</span>
+                <span class="forecast-desc">${info.desc}</span>
             `;
             forecastGrid.appendChild(card);
         }
