@@ -20,7 +20,12 @@
 
       <main class="main-content">
         <header class="header">
-          <h1 id="header-main-title">⛩️ Samurai Control</h1>
+          <div>
+            <h1 id="header-main-title">⛩️ Samurai Control</h1>
+            <div class="sub-datetime-box">
+              <span class="date-text">Loading date...</span> • <span class="clock-text">00:00:00</span>
+            </div>
+          </div>
           <div class="weather-box">Loading weather...</div>
         </header>
 
@@ -46,6 +51,17 @@
               <div class="device-item add-btn" onclick="openAddModal()">
                 + Add Device
               </div>
+            </div>
+          </div>
+
+          <!-- Widget Perkiraan Cuaca 5 Hari Futuristik -->
+          <div class="forecast-section">
+            <div class="forecast-header">
+              <span class="forecast-news-badge">LIVE</span>
+              <span class="forecast-title-text">5-DAY WEATHER FORECAST</span>
+            </div>
+            <div class="forecast-grid" id="forecastGrid">
+              <!-- Render otomatis via JavaScript -->
             </div>
           </div>
         </section>
@@ -88,11 +104,6 @@
             </div>
           </div>
         </section>
-
-        <footer class="info-row">
-          <span class="date-text"></span>
-          <span class="clock-text"></span>
-        </footer>
       </main>
     </div>
 
