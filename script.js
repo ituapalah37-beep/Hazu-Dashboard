@@ -76,12 +76,21 @@ client.on('message', (topic, payload) => {
     const target = parts[2];   
 
     if (category === 'control') {
+        let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
+        
+        // Cek apakah perangkat ini masuk dalam daftar yang baru saja dihapus (diabaikan agar tidak muncul lagi)
+        let deletedSaved = localStorage.getItem('samurai_deleted_devices');
+        let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
+        if (deletedDevices.includes(cleanTarget)) {
+            return; // Abaikan pesan dari broker untuk perangkat yang sudah dihapus
+        }
+
         let found = false;
         document.querySelectorAll('.device-item').forEach(item => {
             const spanText = item.querySelector('span');
             if (spanText) {
                 const cleanName = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
-                if (cleanName === target.replace(/_/g, ' ')) {
+                if (cleanName === cleanTarget) {
                     found = true;
                     const icon = item.querySelector('.status-icon');
                     if (message === 'ON' && !item.classList.contains('active')) {
@@ -99,7 +108,7 @@ client.on('message', (topic, payload) => {
             }
         });
 
-        if (!found && target) {
+        if (!found && target && message !== '') {
             const formattedName = target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             const deviceGrid = document.querySelector('.device-grid');
             const addBtnItem = document.querySelector('.add-btn');
@@ -281,19 +290,32 @@ function toggleDevice(element, deviceName) {
     }
 }
 
-// Fungsi untuk menghapus perangkat/tombol
+// Fungsi untuk menghapus perangkat/tombol (Termasuk Main Light)
 function deleteDevice(event, deviceName) {
-    event.stopPropagation(); // Mencegah toggle device terpicu
+    event.stopPropagation(); 
     if (!confirm(`Are you sure you want to delete device "${deviceName}"?`)) return;
 
-    let saved = localStorage.getItem('samurai_custom_devices');
-    let devices = saved ? JSON.parse(saved) : [];
-    devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
-    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+    // 1. Simpan ke daftar perangkat yang dihapus agar pesan MQTT retained diabaikan
+    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
+    let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
+    const cleanNameLower = deviceName.toLowerCase();
+    if (!deletedDevices.includes(cleanNameLower)) {
+        deletedDevices.push(cleanNameLower);
+        localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
+    }
 
+    // 2. Hapus dari penyimpanan perangkat custom (jika ada)
+    let saved = localStorage.getItem('samurai_custom_devices');
+    if (saved) {
+        let devices = JSON.parse(saved);
+        devices = devices.filter(d => d.toLowerCase() !== cleanNameLower);
+        localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+    }
+
+    // 3. Hapus elemen DOM dari layar
     document.querySelectorAll('.device-item').forEach(item => {
         const spanText = item.querySelector('span');
-        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
+        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === cleanNameLower) {
             item.remove();
         }
     });
@@ -301,12 +323,27 @@ function deleteDevice(event, deviceName) {
     addLog(`Device deleted: <b>${deviceName}</b>.`);
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
+    // 4. Hapus pesan retained di broker MQTT dengan mengirim payload kosong
     if (client.connected) {
-        client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
+        const topic = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
+        client.publish(topic, '', { qos: 0, retain: true });
     }
 }
 
 function loadSavedDevices() {
+    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
+    let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
+
+    // Cek perangkat default statis (Main Light) apakah sudah pernah dihapus
+    if (deletedDevices.includes('main light')) {
+        document.querySelectorAll('.device-item').forEach(item => {
+            const spanText = item.querySelector('span');
+            if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === 'main light') {
+                item.remove();
+            }
+        });
+    }
+
     const saved = localStorage.getItem('samurai_custom_devices');
     if (saved) {
         const devices = JSON.parse(saved);
@@ -314,8 +351,11 @@ function loadSavedDevices() {
         const addBtnItem = document.querySelector('.add-btn');
         
         devices.forEach(deviceName => {
+            const cleanNameLower = deviceName.toLowerCase();
+            if (deletedDevices.includes(cleanNameLower)) return;
+
             const cleanExisting = Array.from(document.querySelectorAll('.device-item span')).some(span => 
-                span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()
+                span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === cleanNameLower
             );
 
             if (!cleanExisting) {
@@ -386,6 +426,16 @@ function confirmAddDevice() {
     if (!deviceName) {
         alert('Device name cannot be empty!');
         return;
+    }
+
+    const cleanNameLower = deviceName.toLowerCase();
+
+    // Hapus dari daftar deleted jika sebelumnya pernah dihapus agar bisa ditambahkan lagi
+    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
+    if (deletedSaved) {
+        let deletedDevices = JSON.parse(deletedSaved);
+        deletedDevices = deletedDevices.filter(d => d !== cleanNameLower);
+        localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
     }
 
     let saved = localStorage.getItem('samurai_custom_devices');
@@ -535,6 +585,6 @@ async function fetchWeather() {
         const temp = Math.round(data.current.temperature_2m);
         weatherBox.textContent = `${reg.name} ⛅ ${temp}°C`;
     } catch (error) {
-        weatherBox.textContent = `${reg.name} ⛅ 28°C`;
+        weatherBox.textContent = `${reg.name} ⛅ 28Y°C`;
     }
 }
