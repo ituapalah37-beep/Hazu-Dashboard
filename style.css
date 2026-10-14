@@ -22,16 +22,16 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* --- TOAST POPUP NOTIFICATION --- */
+/* --- TOAST POPUP NOTIFICATION (Diperkuat untuk Laptop/Desktop) --- */
 .toast-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
+    top: 30px;
+    right: 30px;
+    z-index: 99999;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-width: 320px;
+    gap: 12px;
+    max-width: 360px;
     pointer-events: none;
 }
 
@@ -39,21 +39,21 @@ body {
     background: #1f2937;
     color: #f3f4f6;
     border: 1px solid #374151;
-    padding: 12px 16px;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-    font-size: 13px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    font-size: 14px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     pointer-events: auto;
-    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 3.2s forwards;
-    backdrop-filter: blur(8px);
+    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 3.5s forwards;
+    backdrop-filter: blur(10px);
 }
 
-.toast-notification.success { border-left: 4px solid #4ade80; }
-.toast-notification.info { border-left: 4px solid #38bdf8; }
-.toast-notification.warning { border-left: 4px solid #facc15; }
+.toast-notification.success { border-left: 5px solid #4ade80; }
+.toast-notification.info { border-left: 5px solid #38bdf8; }
+.toast-notification.warning { border-left: 5px solid #facc15; }
 
 @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }
@@ -133,6 +133,13 @@ body {
     display: flex;
 }
 
+/* Mengubah warna teks judul (h2) menjadi putih terang di Dark Mode */
+.view-section h2 {
+    font-size: 18px;
+    color: #f9fafb !important;
+    font-weight: 600;
+}
+
 /* Header Atas */
 .header {
     display: flex;
@@ -163,22 +170,6 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-.wallpaper-overlay {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(17, 24, 39, 0.75);
-    padding: 5px 10px;
-    border-radius: 6px;
-    backdrop-filter: blur(4px);
-}
-
-.wallpaper-overlay h3 {
-    color: #f3f4f6;
-    font-size: 12px;
-    font-weight: 500;
 }
 
 /* --- FITUR KARTU AKSES RFID DI BAWAH LIVE WALLPAPER --- */
@@ -378,7 +369,7 @@ body {
     color: #60a5fa;
 }
 
-/* --- STYLING MODAL POP-UP & OPTION PANELS (VISIBILITAS TINGGI) --- */
+/* --- STYLING MODAL POP-UP & OPTION PANELS --- */
 .modal {
     display: none;
     position: fixed;
@@ -423,7 +414,6 @@ body {
     outline: none;
 }
 
-/* Memperbaiki warna teks opsi dropdown agar kontras dan terlihat jelas */
 .modal-content select option {
     background-color: #1f2937;
     color: #ffffff;
@@ -471,8 +461,6 @@ body.light-mode .menu-item { color: #dbeafe; }
 body.light-mode .menu-item.active, body.light-mode .menu-item:hover { color: #ffffff; }
 body.light-mode .header h1 { color: #1e293b; }
 body.light-mode .wallpaper-card { border-color: #cbd5e1; background: #f1f5f9; }
-body.light-mode .wallpaper-overlay { background: rgba(255, 255, 255, 0.85); }
-body.light-mode .wallpaper-overlay h3 { color: #1e293b; }
 body.light-mode .rfid-card-panel { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
 body.light-mode .rfid-label { color: #64748b; }
 body.light-mode .rfid-value { color: #1e293b; }
@@ -487,6 +475,7 @@ body.light-mode .hw-info h4 { color: #1e293b; }
 body.light-mode .date-text { color: #64748b; }
 body.light-mode .clock-text { color: #0284c7; }
 body.light-mode .weather-box { color: #2563eb; }
+body.light-mode .view-section h2 { color: #1e293b !important; }
 body.light-mode .modal-content { background: #ffffff; border-color: #cbd5e1; }
 body.light-mode .modal-content h3 { color: #1e293b; }
 body.light-mode .modal-content input, 
