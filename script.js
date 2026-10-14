@@ -122,7 +122,7 @@ client.on('message', (topic, payload) => {
             localStorage.setItem('samurai_title', message);
             const welcomeInput = document.getElementById('welcomeInput');
             if (welcomeInput) welcomeInput.value = message;
-            showToast(`Welcome title updated`, 'info');
+            showToast('Welcome title updated', 'info');
         } else if (target === 'theme') {
             if (message === 'light') {
                 document.body.classList.add('light-mode');
@@ -157,7 +157,7 @@ client.on('message', (topic, payload) => {
         }
     }
 
-    // 3. Jika pesan status RFID card masuk (Topik: hazu_samurai_iot_999/rfid)
+    // 3. Jika pesan status RFID card masuk
     if (category === 'rfid' || topic.endsWith('/rfid')) {
         updateRfidCardStatus(message);
     }
@@ -460,7 +460,6 @@ function saveSettings() {
         const selectedVideoUrl = wallpaperFileSelect.value;
         const videoElement = document.getElementById('wallpaperVideo');
         const sourceElement = document.getElementById('videoSource');
-        const titleElement = document.getElementById('wallpaperTitle');
 
         if(sourceElement && videoElement) {
             sourceElement.src = selectedVideoUrl;
@@ -468,12 +467,8 @@ function saveSettings() {
         }
 
         localStorage.setItem('samurai_wallpaper_url', selectedVideoUrl);
-
-        if (titleElement) {
-            const selectedText = wallpaperFileSelect.options[wallpaperFileSelect.selectedIndex].text;
-            titleElement.textContent = selectedText + ' ⚔️';
-            addLog(`Wallpaper changed to: <b>${selectedText}</b>.`);
-        }
+        const selectedText = wallpaperFileSelect.options[wallpaperFileSelect.selectedIndex].text;
+        addLog(`Wallpaper changed to: <b>${selectedText}</b>.`);
 
         if (client.connected) {
             client.publish(`${TOPIC_PREFIX}/settings/wallpaper`, selectedVideoUrl, { qos: 0, retain: true });
