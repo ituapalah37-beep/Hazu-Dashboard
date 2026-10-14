@@ -75,77 +75,61 @@ client.on('message', (topic, payload) => {
     const category = parts[1]; 
     const target = parts[2];   
 
-    if (category === 'control') {
-        let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
-        
-        let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-        let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
-        if (deletedDevices.includes(cleanTarget)) {
-            return; 
-        }
-
-        if (message === 'OFF_DELETED') {
+    // SINKRONISASI MANAJEMEN PERANGKAT (ADD & DELETE)
+    if (category === 'manage') {
+        if (target === 'add') {
+            const deviceName = message;
             let saved = localStorage.getItem('samurai_custom_devices');
-            let devices = saved ? JSON.parse(saved) : [];
-            devices = devices.filter(d => d.toLowerCase() !== cleanTarget);
+            let devices = saved ? JSON.parse(saved) : ['Main Light'];
+            
+            if (!devices.some(d => d.toLowerCase() === deviceName.toLowerCase())) {
+                devices.push(deviceName);
+                localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+                renderDeviceCard(deviceName);
+                addLog(`[Sync] New device <b>${deviceName}</b> added from another device.`);
+                showToast(`New device added: ${deviceName}`, 'success');
+            }
+        } else if (target === 'delete') {
+            const deviceName = message;
+            let saved = localStorage.getItem('samurai_custom_devices');
+            let devices = saved ? JSON.parse(saved) : ['Main Light'];
+            
+            devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
             localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
             document.querySelectorAll('.device-item').forEach(item => {
                 const spanText = item.querySelector('span');
-                if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === cleanTarget) {
+                if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
                     item.remove();
                 }
             });
-            showToast(`Device "${cleanTarget}" removed by sync`, 'warning');
-            return;
+            addLog(`[Sync] Device <b>${deviceName}</b> deleted from another device.`);
+            showToast(`Device "${deviceName}" deleted`, 'warning');
         }
+    }
 
-        let found = false;
+    // SINKRONISASI KONTROL STATUS (ON / OFF)
+    if (category === 'control') {
+        let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
+        
         document.querySelectorAll('.device-item').forEach(item => {
             const spanText = item.querySelector('span');
             if (spanText) {
                 const cleanName = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
                 if (cleanName === cleanTarget) {
-                    found = true;
                     const icon = item.querySelector('.status-icon');
                     if (message === 'ON' && !item.classList.contains('active')) {
                         item.classList.add('active');
                         if(icon) icon.textContent = '🔵';
-                        addLog(`[Sync] Device activated from another source.`);
-                        showToast(`Device "${cleanName}" turned ON`, 'info');
+                        addLog(`[Sync] Device "${cleanName}" turned ON.`);
                     } else if (message === 'OFF' && item.classList.contains('active')) {
                         item.classList.remove('active');
                         if(icon) icon.textContent = '⚪';
-                        addLog(`[Sync] Device deactivated from another source.`);
-                        showToast(`Device "${cleanName}" turned OFF`, 'info');
+                        addLog(`[Sync] Device "${cleanName}" turned OFF.`);
                     }
                 }
             }
         });
-
-        if (!found && target && message !== '' && message !== 'OFF_DELETED') {
-            const formattedName = target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const deviceGrid = document.querySelector('.device-grid');
-            const addBtnItem = document.querySelector('.add-btn');
-
-            if (deviceGrid && addBtnItem) {
-                const newCard = document.createElement('div');
-                newCard.className = message === 'ON' ? 'device-item active' : 'device-item';
-                newCard.setAttribute('onclick', `toggleDevice(this, '${formattedName}')`);
-                newCard.innerHTML = `<span>🏮 ${formattedName}</span> <div class="device-actions"><span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span><button class="btn-delete-device" onclick="deleteDevice(event, '${formattedName}')" title="Delete Device">❌</button></div>`;
-                
-                deviceGrid.insertBefore(newCard, addBtnItem);
-                
-                let saved = localStorage.getItem('samurai_custom_devices');
-                let devices = saved ? JSON.parse(saved) : [];
-                if (!devices.some(d => d.toLowerCase() === cleanTarget)) {
-                    devices.push(formattedName);
-                    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
-                }
-                addLog(`[Sync] New device <b>${formattedName}</b> added automatically.`);
-                showToast(`New device added: ${formattedName}`, 'success');
-            }
-        }
     }
 
     if (category === 'settings') {
@@ -309,23 +293,14 @@ function deleteDevice(event, deviceName) {
     event.stopPropagation(); 
     if (!confirm(`Are you sure you want to delete device "${deviceName}"?`)) return;
 
-    const cleanNameLower = deviceName.toLowerCase();
-
-    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-    let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
-    if (!deletedDevices.includes(cleanNameLower)) {
-        deletedDevices.push(cleanNameLower);
-        localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
-    }
-
     let saved = localStorage.getItem('samurai_custom_devices');
-    let devices = saved ? JSON.parse(saved) : [];
-    devices = devices.filter(d => d.toLowerCase() !== cleanNameLower);
+    let devices = saved ? JSON.parse(saved) : ['Main Light'];
+    devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
     document.querySelectorAll('.device-item').forEach(item => {
         const spanText = item.querySelector('span');
-        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === cleanNameLower) {
+        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
             item.remove();
         }
     });
@@ -334,38 +309,45 @@ function deleteDevice(event, deviceName) {
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
     if (client.connected) {
-        const topic = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
-        client.publish(topic, 'OFF_DELETED', { qos: 0, retain: true });
+        // Kirim sinyal delete lewat topik manajemen khusus
+        client.publish(`${TOPIC_PREFIX}/manage/delete`, deviceName, { qos: 0, retain: false });
+        // Bersihkan retained message kontrol
+        const topicControl = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
+        client.publish(topicControl, '', { qos: 0, retain: true });
+    }
+}
+
+function renderDeviceCard(deviceName) {
+    const deviceGrid = document.querySelector('.device-grid');
+    const addBtnItem = document.querySelector('.add-btn');
+
+    // Cek apakah elemen sudah ada di layar
+    const exists = Array.from(document.querySelectorAll('.device-item span')).some(span => 
+        span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()
+    );
+    if (exists) return;
+
+    const newCard = document.createElement('div');
+    newCard.className = 'device-item';
+    newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
+    newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
+    
+    if(deviceGrid && addBtnItem) {
+        deviceGrid.insertBefore(newCard, addBtnItem);
     }
 }
 
 function loadSavedDevices() {
-    const deviceGrid = document.querySelector('.device-grid');
-    const addBtnItem = document.querySelector('.add-btn');
-    
     let saved = localStorage.getItem('samurai_custom_devices');
     let devices = saved ? JSON.parse(saved) : ['Main Light']; 
     if (!saved) {
         localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
     }
 
-    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-    let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
-
     document.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
 
     devices.forEach(deviceName => {
-        const cleanNameLower = deviceName.toLowerCase();
-        if (deletedDevices.includes(cleanNameLower)) return;
-
-        const newCard = document.createElement('div');
-        newCard.className = 'device-item';
-        newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-        newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
-        
-        if(deviceGrid && addBtnItem) {
-            deviceGrid.insertBefore(newCard, addBtnItem);
-        }
+        renderDeviceCard(deviceName);
     });
 }
 
@@ -425,19 +407,10 @@ function confirmAddDevice() {
         return;
     }
 
-    const cleanNameLower = deviceName.toLowerCase();
-
-    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-    if (deletedSaved) {
-        let deletedDevices = JSON.parse(deletedSaved);
-        deletedDevices = deletedDevices.filter(d => d !== cleanNameLower);
-        localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
-    }
-
     let saved = localStorage.getItem('samurai_custom_devices');
-    let devices = saved ? JSON.parse(saved) : [];
+    let devices = saved ? JSON.parse(saved) : ['Main Light'];
     
-    if (devices.some(d => d.toLowerCase() === cleanNameLower)) {
+    if (devices.some(d => d.toLowerCase() === deviceName.toLowerCase())) {
         alert('Device already exists!');
         return;
     }
@@ -445,21 +418,13 @@ function confirmAddDevice() {
     devices.push(deviceName);
     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
-    const deviceGrid = document.querySelector('.device-grid');
-    const addBtnItem = document.querySelector('.add-btn');
-
-    const newCard = document.createElement('div');
-    newCard.className = 'device-item';
-    newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-    newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
-
-    if(deviceGrid && addBtnItem) {
-        deviceGrid.insertBefore(newCard, addBtnItem);
-    }
+    renderDeviceCard(deviceName);
     addLog(`New device added: <b>${deviceName}</b>.`);
     showToast(`Device "${deviceName}" successfully added`, 'success');
 
     if (client.connected) {
+        // Kirim sinyal add lewat topik manajemen khusus agar HP/Laptop lain langsung menerima
+        client.publish(`${TOPIC_PREFIX}/manage/add`, deviceName, { qos: 0, retain: false });
         client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
     }
 
