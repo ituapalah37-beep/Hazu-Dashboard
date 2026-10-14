@@ -1,18 +1,12 @@
-// --- KONFIGURASI MQTT CLOUD (Topik Unik Privat) ---
 const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
-
-// Gunakan topik unik agar tidak bertabrakan dengan pengguna lain di broker publik
 const TOPIC_PREFIX = 'hazu_samurai_iot_999';
 
 document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
     if(clientIdDisplay) clientIdDisplay.textContent = clientId;
     
-    // Deteksi tipe perangkat klien (HP / Laptop)
     detectClientDeviceType();
-
-    // Muat semua pengaturan & perangkat tersimpan dari LocalStorage
     loadSavedSettings();
     loadSavedDevices();
 
@@ -21,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchWeather();
 });
 
-// --- FUNGSI DETEKSI TIPE PERANGKAT (HP / LAPTOP) ---
 function detectClientDeviceType() {
     const deviceTypeDisplay = document.getElementById('device-type-display');
     const deviceIconEl = document.getElementById('device-type-icon');
@@ -60,7 +53,6 @@ client.on('connect', () => {
     addLog('Successfully connected to Cloud MQTT Broker.');
     showToast('Connected to Cloud MQTT Broker', 'success');
     
-    // Subscribe ke topik privat Anda
     client.subscribe(`${TOPIC_PREFIX}/#`, { qos: 0 });
 });
 
@@ -75,16 +67,14 @@ client.on('error', (err) => {
     client.end();
 });
 
-// Sinkronisasi Pesan Masuk (Perangkat, Pengaturan, & RFID)
 client.on('message', (topic, payload) => {
     const message = payload.toString();
     console.log(`[MQTT RECEIVED] Topic: ${topic} | Message: ${message}`);
     
     const parts = topic.split('/');
-    const category = parts[1]; // 'control', 'settings', atau 'rfid'
-    const target = parts[2];   // nama perangkat, jenis setting, atau rfid status
+    const category = parts[1]; 
+    const target = parts[2];   
 
-    // 1. Jika pesan kontrol perangkat
     if (category === 'control') {
         let found = false;
         document.querySelectorAll('.device-item').forEach(item => {
@@ -109,7 +99,6 @@ client.on('message', (topic, payload) => {
             }
         });
 
-        // Buat otomatis jika perangkat belum ada di layar
         if (!found && target) {
             const formattedName = target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             const deviceGrid = document.querySelector('.device-grid');
@@ -119,7 +108,7 @@ client.on('message', (topic, payload) => {
                 const newCard = document.createElement('div');
                 newCard.className = message === 'ON' ? 'device-item active' : 'device-item';
                 newCard.setAttribute('onclick', `toggleDevice(this, '${formattedName}')`);
-                newCard.innerHTML = `<span>🏮 ${formattedName}</span> <span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span>`;
+                newCard.innerHTML = `<span>🏮 ${formattedName}</span> <div class="device-actions"><span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span><button class="btn-delete-device" onclick="deleteDevice(event, '${formattedName}')" title="Delete Device">❌</button></div>`;
                 
                 deviceGrid.insertBefore(newCard, addBtnItem);
                 
@@ -135,7 +124,6 @@ client.on('message', (topic, payload) => {
         }
     }
 
-    // 2. Jika pesan pengaturan disinkronkan
     if (category === 'settings') {
         if (target === 'title') {
             const headerTitle = document.getElementById('header-main-title');
@@ -178,13 +166,11 @@ client.on('message', (topic, payload) => {
         }
     }
 
-    // 3. Jika pesan status RFID card masuk
     if (category === 'rfid' || topic.endsWith('/rfid')) {
         updateRfidCardStatus(message);
     }
 });
 
-// --- FUNGSI NOTIFIKASI POP-UP (TOAST) ---
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -204,7 +190,6 @@ function showToast(message, type = 'info') {
     }, 3500);
 }
 
-// --- FUNGSI UPDATE STATUS KARTU AKSES RFID ---
 function updateRfidCardStatus(cardInfo) {
     const statusEl = document.getElementById('rfid-card-status');
     const badgeEl = document.getElementById('rfid-badge');
@@ -296,7 +281,31 @@ function toggleDevice(element, deviceName) {
     }
 }
 
-// Memuat Perangkat Tersimpan dari LocalStorage
+// Fungsi untuk menghapus perangkat/tombol
+function deleteDevice(event, deviceName) {
+    event.stopPropagation(); // Mencegah toggle device terpicu
+    if (!confirm(`Are you sure you want to delete device "${deviceName}"?`)) return;
+
+    let saved = localStorage.getItem('samurai_custom_devices');
+    let devices = saved ? JSON.parse(saved) : [];
+    devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
+    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+
+    document.querySelectorAll('.device-item').forEach(item => {
+        const spanText = item.querySelector('span');
+        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
+            item.remove();
+        }
+    });
+
+    addLog(`Device deleted: <b>${deviceName}</b>.`);
+    showToast(`Device "${deviceName}" deleted`, 'warning');
+
+    if (client.connected) {
+        client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
+    }
+}
+
 function loadSavedDevices() {
     const saved = localStorage.getItem('samurai_custom_devices');
     if (saved) {
@@ -313,7 +322,7 @@ function loadSavedDevices() {
                 const newCard = document.createElement('div');
                 newCard.className = 'device-item';
                 newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-                newCard.innerHTML = `<span>🏮 ${deviceName}</span> <span class="status-icon">⚪</span>`;
+                newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
                 
                 if(deviceGrid && addBtnItem) {
                     deviceGrid.insertBefore(newCard, addBtnItem);
@@ -323,7 +332,6 @@ function loadSavedDevices() {
     }
 }
 
-// Memuat Pengaturan Tersimpan dari LocalStorage saat Refresh
 function loadSavedSettings() {
     const savedTitle = localStorage.getItem('samurai_title');
     if (savedTitle) {
@@ -393,7 +401,7 @@ function confirmAddDevice() {
     const newCard = document.createElement('div');
     newCard.className = 'device-item';
     newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-    newCard.innerHTML = `<span>🏮 ${deviceName}</span> <span class="status-icon">⚪</span>`;
+    newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
 
     if(deviceGrid && addBtnItem) {
         deviceGrid.insertBefore(newCard, addBtnItem);
