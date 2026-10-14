@@ -571,7 +571,6 @@ function updateDateTime() {
     clockElement.textContent = now.toLocaleTimeString('en-GB', timeOptions);
 }
 
-// Fungsi bantuan terpusat agar ikon dan deskripsi cuaca selalu sinkron antara header dan kartu prakiraan
 function getWeatherInfo(code) {
     let icon = '☀️';
     let desc = 'CERAH';
@@ -597,7 +596,7 @@ async function fetchWeather() {
         const currentWeatherCode = data.current.weathercode;
         const currentInfo = getWeatherInfo(currentWeatherCode);
 
-        // Tampilkan suhu dan ikon cuaca di header secara sinkron
+        // Header menampilkan data cuaca real-time saat ini
         weatherBox.textContent = `${reg.name} ${currentInfo.icon} ${currentTemp}°C`;
 
         forecastGrid.innerHTML = '';
@@ -606,8 +605,10 @@ async function fetchWeather() {
         for (let i = 0; i < 5; i++) {
             const dateObj = new Date(daily.time[i]);
             const dayName = i === 0 ? 'HARI INI' : dateObj.toLocaleDateString('id-ID', { weekday: 'short' }).toUpperCase();
-            const temp = Math.round(daily.temperature_2m_max[i]);
-            const code = daily.weathercode[i];
+            
+            // Indeks ke-0 (Hari Ini) disamakan dengan suhu dan kondisi saat ini agar sinkron sempurna dengan header
+            const temp = i === 0 ? currentTemp : Math.round(daily.temperature_2m_max[i]);
+            const code = i === 0 ? currentWeatherCode : daily.weathercode[i];
             const info = getWeatherInfo(code);
 
             const card = document.createElement('div');
