@@ -12,9 +12,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 @keyframes gradientAnimation {
@@ -495,29 +495,36 @@ body.light-mode .toast-notification {
     border-color: #cbd5e1;
 }
 
+/* PERBAIKAN TATA LETAK MOBILE AGAR DAPAT DIGULIR (SCROLL) DENGAN BAIK */
 @media (max-width: 768px) {
     body {
         align-items: flex-start;
-        height: 100vh;
+        height: auto;
+        min-height: 100vh;
         width: 100vw;
         background: #111827;
         padding: 0;
         margin: 0;
-        overflow: hidden;
+        overflow-y: auto !important;
     }
 
     .dashboard-container {
         width: 100% !important;
-        height: 100vh;
+        height: auto !important;
+        min-height: 100vh;
         max-width: 100% !important;
         border-radius: 0;
         border: none;
         flex-direction: column-reverse;
         box-shadow: none;
         margin: 0;
+        padding-bottom: 70px;
     }
 
     .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
         width: 100%;
         height: 60px;
         flex-direction: row;
@@ -527,6 +534,7 @@ body.light-mode .toast-notification {
         justify-content: space-around;
         align-items: center;
         background: linear-gradient(90deg, #1e3a8a, #172554);
+        z-index: 999;
     }
 
     .sidebar .menu-item {
@@ -543,10 +551,10 @@ body.light-mode .toast-notification {
     }
 
     .main-content {
-        height: calc(100vh - 60px);
-        padding: 12px 15px;
-        overflow-y: auto;
-        gap: 10px;
+        height: auto !important;
+        overflow-y: visible !important;
+        padding: 12px 15px 30px 15px;
+        gap: 12px;
     }
 
     .header h1 {
