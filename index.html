@@ -4,60 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Samurai IoT Dashboard</title>
-    <!-- Pustaka MQTT.js untuk komunikasi Cloud lintas jaringan -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Toast Notification Container (Pop-up di Laptop/Desktop) -->
     <div id="toast-container" class="toast-container"></div>
 
     <div class="dashboard-container">
-      <!-- Sidebar Kiri (Desktop) / Bottom Nav (Mobile) -->
       <nav class="sidebar">
-        <a class="menu-item active" onclick="switchView('home', this)"
-          >🏠 <span>Home</span></a
-        >
-        <a class="menu-item" onclick="switchView('result', this)"
-          >📊 <span>Logs</span></a
-        >
-        <a class="menu-item" onclick="switchView('device', this)"
-          >⚙️ <span>Device</span></a
-        >
-        <a class="menu-item settings" onclick="openSettings()"
-          >🛠️ <span>Settings</span></a
-        >
+        <a class="menu-item active" onclick="switchView('home', this)">🏠 <span>Home</span></a>
+        <a class="menu-item" onclick="switchView('result', this)">📊 <span>Logs</span></a>
+        <a class="menu-item" onclick="switchView('device', this)">⚙️ <span>Device</span></a>
+        <a class="menu-item settings" onclick="openSettings()">🛠️ <span>Settings</span></a>
       </nav>
 
-      <!-- Bagian Konten Utama -->
       <main class="main-content">
-        <!-- Header Atas -->
         <header class="header">
           <h1 id="header-main-title">⛩️ Samurai Control</h1>
           <div class="weather-box">Loading weather...</div>
         </header>
 
-        <!-- Tampilan Home / Kontrol Utama -->
         <section id="home-view" class="view-section active">
-          <!-- Live Wallpaper (Tanpa Teks/Overlay) -->
           <div class="wallpaper-card">
-            <video
-              id="wallpaperVideo"
-              class="wallpaper-video"
-              autoplay
-              loop
-              muted
-              playsinline
-            >
-              <source
-                id="videoSource"
-                src="https://github.com/ituapalah37-beep/Hazu-Dashboard/releases/download/v1.0.0/Nature.mp4"
-                type="video/mp4"
-              />
+            <video id="wallpaperVideo" class="wallpaper-video" autoplay loop muted playsinline>
+              <source id="videoSource" src="https://github.com/ituapalah37-beep/Hazu-Dashboard/releases/download/v1.0.0/Nature.mp4" type="video/mp4" />
             </video>
           </div>
 
-          <!-- Fitur Kartu Akses RFID di Bawah Live Wallpaper -->
           <div class="rfid-card-panel">
             <div class="rfid-icon">💳</div>
             <div class="rfid-info">
@@ -67,16 +40,14 @@
             <div id="rfid-badge" class="rfid-badge idle">Standby</div>
           </div>
 
-          <!-- Panel Kontrol Perangkat -->
           <div class="device-section">
             <h3>Device Control Panel</h3>
             <div class="device-grid">
-              <div
-                class="device-item"
-                onclick="toggleDevice(this, 'Main Light')"
-              >
+              <div class="device-item" onclick="toggleDevice(this, 'Main Light')">
                 <span>🏮 Main Light</span>
-                <span class="status-icon">⚪</span>
+                <div class="device-actions">
+                  <span class="status-icon">⚪</span>
+                </div>
               </div>
               <div class="device-item add-btn" onclick="openAddModal()">
                 + Add Device
@@ -85,7 +56,6 @@
           </div>
         </section>
 
-        <!-- Tampilan Result / Logs -->
         <section id="result-view" class="view-section">
           <h2>📊 System Activity Logs</h2>
           <div class="log-container">
@@ -98,11 +68,9 @@
           </div>
         </section>
 
-        <!-- Tampilan Device / Info -->
         <section id="device-view" class="view-section">
           <h2>⚙️ Cloud & Browser Status</h2>
           <div class="device-manager-container">
-            <!-- Kartu Kategori Perangkat (HP / Laptop) -->
             <div class="hardware-card">
               <div class="hw-info">
                 <h4>Client Browser Device</h4>
@@ -116,9 +84,7 @@
                 <h4>MQTT Broker</h4>
                 <p>EMQX Cloud (Public WSS)</p>
               </div>
-              <span id="mqtt-status" class="hw-status" style="color: #f87171"
-                >Connecting...</span
-              >
+              <span id="mqtt-status" class="hw-status" style="color: #f87171">Connecting...</span>
             </div>
             <div class="hardware-card">
               <div class="hw-info">
@@ -129,7 +95,6 @@
           </div>
         </section>
 
-        <!-- Informasi Waktu & Tanggal Bawah -->
         <footer class="info-row">
           <span class="date-text"></span>
           <span class="clock-text"></span>
@@ -137,35 +102,23 @@
       </main>
     </div>
 
-    <!-- Modal Tambah Perangkat -->
     <div id="addModal" class="modal">
       <div class="modal-content">
         <h3>Add New Device</h3>
-        <input
-          type="text"
-          id="deviceNameInput"
-          placeholder="Device Name (e.g., Fan)"
-        />
+        <input type="text" id="deviceNameInput" placeholder="Device Name (e.g., Fan)" />
         <div class="modal-buttons">
           <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-          <button class="btn-submit" onclick="confirmAddDevice()">
-            Save
-          </button>
+          <button class="btn-submit" onclick="confirmAddDevice()">Save</button>
         </div>
       </div>
     </div>
 
-    <!-- Modal Pengaturan -->
     <div id="settingsModal" class="modal">
       <div class="modal-content">
         <h3>Dashboard Settings</h3>
         <div class="setting-item">
           <label>Welcome Title:</label>
-          <input
-            type="text"
-            id="welcomeInput"
-            placeholder="⛩️ Samurai Control"
-          />
+          <input type="text" id="welcomeInput" placeholder="⛩️ Samurai Control" />
         </div>
         <div class="setting-item">
           <label>Region:</label>
