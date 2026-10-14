@@ -589,26 +589,27 @@ async function fetchWeather() {
     weatherBox.textContent = `${reg.name} ⛅ Memuat...`;
     
     try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max,weathercode&timezone=auto`);
+        // Mengambil perkiraan cuaca harian dari API Open-Meteo
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&daily=temperature_2m_max,weathercode&timezone=auto`);
         const data = await response.json();
         
-        const currentTemp = Math.round(data.current.temperature_2m);
-        const currentWeatherCode = data.current.weathercode;
-        const currentInfo = getWeatherInfo(currentWeatherCode);
-
-        // Header menampilkan data cuaca real-time saat ini
-        weatherBox.textContent = `${reg.name} ${currentInfo.icon} ${currentTemp}°C`;
-
         forecastGrid.innerHTML = '';
         const daily = data.daily;
+
+        // Ambil data khusus HARI INI (indeks ke-0)
+        const todayTemp = Math.round(daily.temperature_2m_max[0]);
+        const todayCode = daily.weathercode[0];
+        const todayInfo = getWeatherInfo(todayCode);
+
+        // Header dipaksa persis sama dengan kartu "HARI INI"
+        weatherBox.textContent = `${reg.name} ${todayInfo.icon} ${todayTemp}°C`;
         
         for (let i = 0; i < 5; i++) {
             const dateObj = new Date(daily.time[i]);
             const dayName = i === 0 ? 'HARI INI' : dateObj.toLocaleDateString('id-ID', { weekday: 'short' }).toUpperCase();
             
-            // Indeks ke-0 (Hari Ini) disamakan dengan suhu dan kondisi saat ini agar sinkron sempurna dengan header
-            const temp = i === 0 ? currentTemp : Math.round(daily.temperature_2m_max[i]);
-            const code = i === 0 ? currentWeatherCode : daily.weathercode[i];
+            const temp = Math.round(daily.temperature_2m_max[i]);
+            const code = daily.weathercode[i];
             const info = getWeatherInfo(code);
 
             const card = document.createElement('div');
