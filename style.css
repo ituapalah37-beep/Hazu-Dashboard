@@ -66,7 +66,7 @@ body {
 
 .dashboard-container {
     width: 980px;
-    height: 700px;
+    height: 720px;
     background-color: #111827;
     border-radius: 25px;
     display: flex;
@@ -167,7 +167,7 @@ body {
 
 .wallpaper-card {
     width: 100%;
-    height: 140px;
+    height: 130px;
     border-radius: 12px;
     overflow: hidden;
     position: relative;
@@ -305,8 +305,8 @@ body {
 
 /* WIDGET PERKIRAAN CUACA FUTURISTIK & MODERN */
 .forecast-section {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(59, 130, 246, 0.4);
     border-radius: 14px;
     padding: 10px 14px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
@@ -347,8 +347,8 @@ body {
 }
 
 .forecast-card {
-    background: rgba(17, 24, 39, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(17, 24, 39, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     padding: 8px 6px;
     text-align: center;
@@ -357,7 +357,8 @@ body {
     align-items: center;
     justify-content: space-between;
     transition: all 0.3s ease;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    min-height: 90px;
+    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.1);
 }
 
 .forecast-card:hover {
@@ -376,12 +377,12 @@ body {
 
 .forecast-icon {
     font-size: 22px;
-    margin: 4px 0;
+    margin: 3px 0;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .forecast-temp {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     color: #f9fafb;
 }
@@ -390,6 +391,7 @@ body {
     font-size: 9px;
     color: #60a5fa;
     margin-top: 2px;
+    font-weight: 600;
 }
 
 .log-container {
@@ -450,12 +452,6 @@ body {
 .hw-info p {
     font-size: 12px;
     color: #9ca3af;
-}
-
-.hw-status.online {
-    color: #4ade80;
-    font-weight: bold;
-    font-size: 13px;
 }
 
 .weather-box {
@@ -568,7 +564,7 @@ body.light-mode .device-section h3 { color: #1e293b; }
 body.light-mode .device-item { background: #f8fafc; border-color: #e2e8f0; color: #1e293b; }
 body.light-mode .device-item.active { background: #2563eb; color: white; }
 body.light-mode .device-item.add-btn { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }
-body.light-mode .forecast-section { background: linear-gradient(135deg, rgba(241, 245, 249, 0.9), rgba(226, 232, 240, 0.9)); border-color: #cbd5e1; }
+body.light-mode .forecast-section { background: linear-gradient(135deg, rgba(241, 245, 249, 0.95), rgba(226, 232, 240, 0.95)); border-color: #cbd5e1; }
 body.light-mode .forecast-title-text { color: #2563eb; }
 body.light-mode .forecast-card { background: #ffffff; border-color: #cbd5e1; }
 body.light-mode .forecast-day { color: #475569; }
@@ -662,7 +658,7 @@ body.light-mode .toast-notification {
     }
 
     .wallpaper-card {
-        height: 130px;
+        height: 120px;
     }
 
     .forecast-grid {
@@ -672,6 +668,7 @@ body.light-mode .toast-notification {
 
     .forecast-card {
         padding: 6px 2px;
+        min-height: 80px;
     }
 
     .forecast-day {
