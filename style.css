@@ -55,7 +55,6 @@ body {
     white-space: nowrap;
 }
 
-/* Menghilangkan border berwarna di atas agar tampil bersih seperti kapsul hardware */
 .toast-notification.success, 
 .toast-notification.info, 
 .toast-notification.warning { 
@@ -252,6 +251,75 @@ body {
 .rfid-badge.idle { background: #374151; color: #9ca3af; }
 .rfid-badge.active { background: #059669; color: #d1fae5; box-shadow: 0 0 10px rgba(5,150,105,0.5); }
 
+/* --- PERBAIKAN GRID INDIKATOR KARTU RFID --- */
+.rfid-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.rfid-status-card {
+    background: #1f2937;
+    border: 1px solid #374151;
+    padding: 8px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.rfid-status-card.active {
+    border-color: #059669;
+    background: rgba(5, 150, 105, 0.1);
+}
+
+.card-icon {
+    font-size: 18px;
+    background: rgba(59, 130, 246, 0.15);
+    padding: 5px;
+    border-radius: 6px;
+}
+
+.card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: 9px;
+    color: #9ca3af;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-state {
+    font-size: 11px;
+    font-weight: 600;
+    color: #f3f4f6;
+}
+
+.btn-pass-unlock {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.btn-pass-unlock:hover {
+    background: #1d4ed8;
+}
+
 .device-section h3 {
     font-size: 13px;
     color: #f3f4f6;
@@ -325,7 +393,6 @@ body {
     border-color: #3b82f6;
 }
 
-/* WIDGET PERKIRAAN CUACA FUTURISTIK & MODERN */
 .forecast-section {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
     border: 1px solid rgba(59, 130, 246, 0.4);
@@ -583,6 +650,10 @@ body.light-mode .rfid-card-panel { background: #f8fafc; border-color: #cbd5e1; c
 body.light-mode .rfid-label { color: #64748b; }
 body.light-mode .rfid-value { color: #1e293b; }
 body.light-mode .rfid-badge.idle { background: #e2e8f0; color: #475569; }
+body.light-mode .rfid-status-card { background: #f8fafc; border-color: #cbd5e1; }
+body.light-mode .rfid-status-card.active { background: rgba(5, 150, 105, 0.08); border-color: #059669; }
+body.light-mode .card-title { color: #64748b; }
+body.light-mode .card-state { color: #1e293b; }
 body.light-mode .device-section h3 { color: #1e293b; }
 body.light-mode .device-item { background: #f8fafc; border-color: #e2e8f0; color: #1e293b; }
 body.light-mode .device-item.active { background: #2563eb; color: white; }
@@ -672,6 +743,10 @@ body.light-mode .toast-notification {
         gap: 10px;
     }
 
+    .rfid-status-grid {
+        grid-template-columns: 1fr;
+    }
+
     .header h1 {
         font-size: 16px;
     }
@@ -714,72 +789,4 @@ body.light-mode .toast-notification {
         width: 90%;
         max-width: 320px;
     }
-    .rfid-status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 5px;
-}
-
-.rfid-status-card {
-    background: #1f2937;
-    border: 1px solid #374151;
-    padding: 8px 12px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.rfid-status-card.active {
-    border-color: #059669;
-    background: rgba(5, 150, 105, 0.1);
-}
-
-.card-icon {
-    font-size: 18px;
-    background: rgba(59, 130, 246, 0.15);
-    padding: 5px;
-    border-radius: 6px;
-}
-
-.card-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.card-title {
-    font-size: 9px;
-    color: #9ca3af;
-    font-weight: bold;
-}
-
-.card-state {
-    font-size: 11px;
-    font-weight: 600;
-    color: #f3f4f6;
-}
-
-.btn-pass-unlock {
-    background: #2563eb;
-    color: white;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
-}
-
-.btn-pass-unlock:hover {
-    background: #1d4ed8;
-}
-
-body.light-mode .rfid-status-card { background: #f8fafc; border-color: #cbd5e1; }
-body.light-mode .rfid-status-card.active { background: rgba(5, 150, 105, 0.08); border-color: #059669; }
-body.light-mode .card-title { color: #64748b; }
-body.light-mode .card-state { color: #1e293b; }
 }
