@@ -1,3 +1,6 @@
+Menambahkan fungsi `detectClientDeviceType()` untuk mendeteksi apakah browser dijalankan dari ponsel (HP) atau komputer/laptop[cite: 1].
+
+```javascript
 // --- KONFIGURASI MQTT CLOUD (Topik Unik Privat) ---
 const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; 
 const clientId = 'SamuraiIoT_' + Math.random().toString(16).substr(2, 6);
@@ -9,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientIdDisplay = document.getElementById('client-id-display');
     if(clientIdDisplay) clientIdDisplay.textContent = clientId;
     
+    // Deteksi tipe perangkat klien (HP / Laptop)
+    detectClientDeviceType();
+
     // Muat semua pengaturan & perangkat tersimpan dari LocalStorage
     loadSavedSettings();
     loadSavedDevices();
@@ -17,6 +23,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateDateTime, 1000);
     fetchWeather();
 });
+
+// --- FUNGSI DETEKSI TIPE PERANGKAT (HP / LAPTOP) ---
+function detectClientDeviceType() {
+    const deviceTypeDisplay = document.getElementById('device-type-display');
+    const deviceIconEl = document.getElementById('device-type-icon');
+    if (!deviceTypeDisplay) return;
+
+    const ua = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || window.innerWidth <= 768;
+
+    if (isMobile) {
+        deviceTypeDisplay.textContent = 'Mobile Phone (Smartphone)';
+        if (deviceIconEl) deviceIconEl.textContent = '📱';
+    } else {
+        deviceTypeDisplay.textContent = 'Laptop / Desktop Computer';
+        if (deviceIconEl) deviceIconEl.textContent = '💻';
+    }
+}
 
 const mqttStatusEl = document.getElementById('mqtt-status');
 if(mqttStatusEl) {
@@ -509,3 +533,4 @@ async function fetchWeather() {
         weatherBox.textContent = `${reg.name} ⛅ 28°C`;
     }
 }
+```[cite: 1]
