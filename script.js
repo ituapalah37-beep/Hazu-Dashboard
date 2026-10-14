@@ -75,38 +75,21 @@ client.on('message', (topic, payload) => {
     const category = parts[1]; 
     const target = parts[2];   
 
-    if (category === 'manage') {
-        if (target === 'add') {
-            const deviceName = message;
-            let saved = localStorage.getItem('samurai_custom_devices');
-            let devices = saved ? JSON.parse(saved) : ['Main Light'];
-            
-            if (!devices.some(d => d.toLowerCase() === deviceName.toLowerCase())) {
-                devices.push(deviceName);
-                localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
-                renderDeviceCard(deviceName);
-                addLog(`[Sync] New device <b>${deviceName}</b> added from another device.`);
-                showToast(`New device added: ${deviceName}`, 'success');
+    // SINKRONISASI DAFTAR PERANGKAT MELALUI MQTT RETAINED ARRAY LIST
+    if (category === 'manage' && target === 'list') {
+        try {
+            const serverDevices = JSON.parse(message);
+            if (Array.isArray(serverDevices)) {
+                localStorage.setItem('samurai_custom_devices', JSON.stringify(serverDevices));
+                loadSavedDevices();
+                addLog(`[Sync] Device list synchronized from cloud.`);
             }
-        } else if (target === 'delete') {
-            const deviceName = message;
-            let saved = localStorage.getItem('samurai_custom_devices');
-            let devices = saved ? JSON.parse(saved) : ['Main Light'];
-            
-            devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
-            localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
-
-            document.querySelectorAll('.device-item').forEach(item => {
-                const spanText = item.querySelector('span');
-                if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
-                    item.remove();
-                }
-            });
-            addLog(`[Sync] Device <b>${deviceName}</b> deleted from another device.`);
-            showToast(`Device "${deviceName}" deleted`, 'warning');
+        } catch (e) {
+            console.error("Invalid device list JSON");
         }
     }
 
+    // SINKRONISASI KONTROL STATUS (ON / OFF)
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
@@ -169,6 +152,13 @@ client.on('message', (topic, payload) => {
                 localStorage.setItem('samurai_wallpaper_status', 'on');
                 localStorage.setItem('samurai_wallpaper_url', message);
             }
+        } else if (target === 'region') {
+            currentRegionKey = message;
+            const regionSelect = document.getElementById('regionSelect');
+            if (regionSelect) regionSelect.value = message;
+            fetchWeather();
+            updateDateTime();
+            addLog(`[Sync] Region changed to ${regionData[message].name}.`);
         }
     }
 
@@ -296,39 +286,17 @@ function deleteDevice(event, deviceName) {
     devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
-    document.querySelectorAll('.device-item').forEach(item => {
-        const spanText = item.querySelector('span');
-        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
-            item.remove();
-        }
-    });
-
+    loadSavedDevices();
     addLog(`Device deleted: <b>${deviceName}</b>.`);
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
     if (client.connected) {
-        client.publish(`${TOPIC_PREFIX}/manage/delete`, deviceName, { qos: 0, retain: false });
+        // Publikasikan daftar perangkat terbaru ke broker (Retained) agar HP dan Laptop sinkron
+        client.publish(`${TOPIC_PREFIX}/manage/list`, JSON.stringify(devices), { qos: 0, retain: true });
+        
+        // Hapus pesan status kontrol perangkat
         const topicControl = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topicControl, '', { qos: 0, retain: true });
-    }
-}
-
-function renderDeviceCard(deviceName) {
-    const deviceGrid = document.querySelector('.device-grid');
-    const addBtnItem = document.querySelector('.add-btn');
-
-    const exists = Array.from(document.querySelectorAll('.device-item span')).some(span => 
-        span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()
-    );
-    if (exists) return;
-
-    const newCard = document.createElement('div');
-    newCard.className = 'device-item';
-    newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-    newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
-    
-    if(deviceGrid && addBtnItem) {
-        deviceGrid.insertBefore(newCard, addBtnItem);
     }
 }
 
@@ -339,10 +307,19 @@ function loadSavedDevices() {
         localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
     }
 
-    document.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
+    const deviceGrid = document.getElementById('deviceGrid');
+    const addBtnItem = deviceGrid.querySelector('.add-btn');
+
+    // Hapus semua kartu perangkat kecuali tombol add
+    deviceGrid.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
 
     devices.forEach(deviceName => {
-        renderDeviceCard(deviceName);
+        const newCard = document.createElement('div');
+        newCard.className = 'device-item';
+        newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
+        newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
+        
+        deviceGrid.insertBefore(newCard, addBtnItem);
     });
 }
 
@@ -413,12 +390,13 @@ function confirmAddDevice() {
     devices.push(deviceName);
     localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
-    renderDeviceCard(deviceName);
+    loadSavedDevices();
     addLog(`New device added: <b>${deviceName}</b>.`);
     showToast(`Device "${deviceName}" successfully added`, 'success');
 
     if (client.connected) {
-        client.publish(`${TOPIC_PREFIX}/manage/add`, deviceName, { qos: 0, retain: false });
+        // Kirim daftar perangkat terbaru ke broker (Retained)
+        client.publish(`${TOPIC_PREFIX}/manage/list`, JSON.stringify(devices), { qos: 0, retain: true });
         client.publish(`${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`, 'OFF', { qos: 0, retain: true });
     }
 
@@ -457,6 +435,10 @@ function saveSettings() {
         addLog(`Active region changed to: <b>${regName}</b>.`);
         updateDateTime();
         fetchWeather();
+
+        if (client.connected) {
+            client.publish(`${TOPIC_PREFIX}/settings/region`, currentRegionKey, { qos: 0, retain: true });
+        }
     }
 
     const themeSelect = document.getElementById('themeSelect');
@@ -537,30 +519,30 @@ async function fetchWeather() {
     if(!weatherBox || !forecastGrid) return;
     
     const reg = regionData[currentRegionKey];
-    weatherBox.textContent = `${reg.name} ⛅ Loading...`;
+    weatherBox.textContent = `${reg.name} ⛅ Memuat...`;
     
     try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m&daily=temperature_2m_max,weathercode&timezone=auto`);
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max,weathercode&timezone=auto`);
         const data = await response.json();
         
         const currentTemp = Math.round(data.current.temperature_2m);
         weatherBox.textContent = `${reg.name} ⛅ ${currentTemp}°C`;
 
-        // Render 5-Day Forecast Grid
+        // Render 5-Day Forecast Grid sesuai data meteorologi wilayah
         forecastGrid.innerHTML = '';
         const daily = data.daily;
         
         for (let i = 0; i < 5; i++) {
             const dateObj = new Date(daily.time[i]);
-            const dayName = i === 0 ? 'TODAY' : dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+            const dayName = i === 0 ? 'HARI INI' : dateObj.toLocaleDateString('id-ID', { weekday: 'short' }).toUpperCase();
             const temp = Math.round(daily.temperature_2m_max[i]);
             const code = daily.weathercode[i];
 
             let icon = '☀️';
-            let desc = 'SUNNY';
-            if (code >= 1 && code <= 3) { icon = '⛅'; desc = 'CLOUDY'; }
-            else if (code >= 51 && code <= 67) { icon = '🌧️'; desc = 'RAIN'; }
-            else if (code >= 95) { icon = '⚡'; desc = 'STORM'; }
+            let desc = 'CERAH';
+            if (code >= 1 && code <= 3) { icon = '⛅'; desc = 'BERAWAN'; }
+            else if (code >= 51 && code <= 67) { icon = '🌧️'; desc = 'HUJAN'; }
+            else if (code >= 95) { icon = '⚡'; desc = 'BADAI'; }
 
             const card = document.createElement('div');
             card.className = 'forecast-card';
@@ -574,6 +556,6 @@ async function fetchWeather() {
         }
     } catch (error) {
         weatherBox.textContent = `${reg.name} ⛅ 28°C`;
-        forecastGrid.innerHTML = '<div style="grid-column: span 5; text-align: center; font-size: 11px; color: #9ca3af;">Forecast unavailable</div>';
+        forecastGrid.innerHTML = '<div style="grid-column: span 5; text-align: center; font-size: 11px; color: #9ca3af; padding: 20px;">Gagal memuat perkiraan cuaca wilayah.</div>';
     }
 }
