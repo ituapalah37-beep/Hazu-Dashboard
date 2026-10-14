@@ -75,23 +75,23 @@ client.on('message', (topic, payload) => {
     const category = parts[1]; 
     const target = parts[2];   
 
+    // Sinkronisasi status perangkat masuk
     if (category === 'control') {
         let cleanTarget = target ? target.replace(/_/g, ' ').toLowerCase() : '';
         
-        // Cek apakah perangkat ini masuk dalam daftar yang baru saja dihapus (diabaikan agar tidak muncul lagi)
-        let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-        let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
-        if (deletedDevices.includes(cleanTarget)) {
-            return; // Abaikan pesan dari broker untuk perangkat yang sudah dihapus
+        // Validasi: Abaikan pesan MQTT jika perangkat sudah dihapus dari LocalStorage
+        let saved = localStorage.getItem('samurai_custom_devices');
+        let devices = saved ? JSON.parse(saved) : [];
+        const exists = devices.some(d => d.toLowerCase() === cleanTarget);
+        if (!exists) {
+            return; // Abaikan pesan dari broker untuk perangkat yang tidak ada
         }
 
-        let found = false;
         document.querySelectorAll('.device-item').forEach(item => {
             const spanText = item.querySelector('span');
             if (spanText) {
                 const cleanName = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
                 if (cleanName === cleanTarget) {
-                    found = true;
                     const icon = item.querySelector('.status-icon');
                     if (message === 'ON' && !item.classList.contains('active')) {
                         item.classList.add('active');
@@ -107,30 +107,6 @@ client.on('message', (topic, payload) => {
                 }
             }
         });
-
-        if (!found && target && message !== '') {
-            const formattedName = target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const deviceGrid = document.querySelector('.device-grid');
-            const addBtnItem = document.querySelector('.add-btn');
-
-            if (deviceGrid && addBtnItem) {
-                const newCard = document.createElement('div');
-                newCard.className = message === 'ON' ? 'device-item active' : 'device-item';
-                newCard.setAttribute('onclick', `toggleDevice(this, '${formattedName}')`);
-                newCard.innerHTML = `<span>🏮 ${formattedName}</span> <div class="device-actions"><span class="status-icon">${message === 'ON' ? '🔵' : '⚪'}</span><button class="btn-delete-device" onclick="deleteDevice(event, '${formattedName}')" title="Delete Device">❌</button></div>`;
-                
-                deviceGrid.insertBefore(newCard, addBtnItem);
-                
-                let saved = localStorage.getItem('samurai_custom_devices');
-                let devices = saved ? JSON.parse(saved) : [];
-                if (!devices.includes(formattedName)) {
-                    devices.push(formattedName);
-                    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
-                }
-                addLog(`[Sync] New device <b>${formattedName}</b> added automatically.`);
-                showToast(`New device added: ${formattedName}`, 'success');
-            }
-        }
     }
 
     if (category === 'settings') {
@@ -290,32 +266,22 @@ function toggleDevice(element, deviceName) {
     }
 }
 
-// Fungsi untuk menghapus perangkat/tombol (Termasuk Main Light)
+// Fungsi Menghapus Perangkat
 function deleteDevice(event, deviceName) {
     event.stopPropagation(); 
     if (!confirm(`Are you sure you want to delete device "${deviceName}"?`)) return;
 
-    // 1. Simpan ke daftar perangkat yang dihapus agar pesan MQTT retained diabaikan
-    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-    let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
-    const cleanNameLower = deviceName.toLowerCase();
-    if (!deletedDevices.includes(cleanNameLower)) {
-        deletedDevices.push(cleanNameLower);
-        localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
-    }
-
-    // 2. Hapus dari penyimpanan perangkat custom (jika ada)
     let saved = localStorage.getItem('samurai_custom_devices');
-    if (saved) {
-        let devices = JSON.parse(saved);
-        devices = devices.filter(d => d.toLowerCase() !== cleanNameLower);
-        localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
-    }
+    let devices = saved ? JSON.parse(saved) : [];
+    
+    // Hapus dari array LocalStorage
+    devices = devices.filter(d => d.toLowerCase() !== deviceName.toLowerCase());
+    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
-    // 3. Hapus elemen DOM dari layar
+    // Hapus elemen dari tampilan layar
     document.querySelectorAll('.device-item').forEach(item => {
         const spanText = item.querySelector('span');
-        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === cleanNameLower) {
+        if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === deviceName.toLowerCase()) {
             item.remove();
         }
     });
@@ -323,53 +289,37 @@ function deleteDevice(event, deviceName) {
     addLog(`Device deleted: <b>${deviceName}</b>.`);
     showToast(`Device "${deviceName}" deleted`, 'warning');
 
-    // 4. Hapus pesan retained di broker MQTT dengan mengirim payload kosong
+    // Hapus retained message di broker MQTT
     if (client.connected) {
         const topic = `${TOPIC_PREFIX}/control/${deviceName.toLowerCase().replace(/\s+/g, '_')}`;
         client.publish(topic, '', { qos: 0, retain: true });
     }
 }
 
+// Memuat Perangkat Dinamis dari LocalStorage
 function loadSavedDevices() {
-    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-    let deletedDevices = deletedSaved ? JSON.parse(deletedSaved) : [];
-
-    // Cek perangkat default statis (Main Light) apakah sudah pernah dihapus
-    if (deletedDevices.includes('main light')) {
-        document.querySelectorAll('.device-item').forEach(item => {
-            const spanText = item.querySelector('span');
-            if (spanText && spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === 'main light') {
-                item.remove();
-            }
-        });
+    const deviceGrid = document.querySelector('.device-grid');
+    const addBtnItem = document.querySelector('.add-btn');
+    
+    let saved = localStorage.getItem('samurai_custom_devices');
+    let devices = saved ? JSON.parse(saved) : ['Main Light']; // Default awal 'Main Light'
+    if (!saved) {
+        localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
     }
 
-    const saved = localStorage.getItem('samurai_custom_devices');
-    if (saved) {
-        const devices = JSON.parse(saved);
-        const deviceGrid = document.querySelector('.device-grid');
-        const addBtnItem = document.querySelector('.add-btn');
+    // Bersihkan kartu perangkat lama sebelum merender ulang
+    document.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
+
+    devices.forEach(deviceName => {
+        const newCard = document.createElement('div');
+        newCard.className = 'device-item';
+        newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
+        newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
         
-        devices.forEach(deviceName => {
-            const cleanNameLower = deviceName.toLowerCase();
-            if (deletedDevices.includes(cleanNameLower)) return;
-
-            const cleanExisting = Array.from(document.querySelectorAll('.device-item span')).some(span => 
-                span.textContent.replace(/🏮\s*/g, '').trim().toLowerCase() === cleanNameLower
-            );
-
-            if (!cleanExisting) {
-                const newCard = document.createElement('div');
-                newCard.className = 'device-item';
-                newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-                newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
-                
-                if(deviceGrid && addBtnItem) {
-                    deviceGrid.insertBefore(newCard, addBtnItem);
-                }
-            }
-        });
-    }
+        if(deviceGrid && addBtnItem) {
+            deviceGrid.insertBefore(newCard, addBtnItem);
+        }
+    });
 }
 
 function loadSavedSettings() {
@@ -428,22 +378,17 @@ function confirmAddDevice() {
         return;
     }
 
-    const cleanNameLower = deviceName.toLowerCase();
-
-    // Hapus dari daftar deleted jika sebelumnya pernah dihapus agar bisa ditambahkan lagi
-    let deletedSaved = localStorage.getItem('samurai_deleted_devices');
-    if (deletedSaved) {
-        let deletedDevices = JSON.parse(deletedSaved);
-        deletedDevices = deletedDevices.filter(d => d !== cleanNameLower);
-        localStorage.setItem('samurai_deleted_devices', JSON.stringify(deletedDevices));
-    }
-
     let saved = localStorage.getItem('samurai_custom_devices');
     let devices = saved ? JSON.parse(saved) : [];
-    if (!devices.includes(deviceName)) {
-        devices.push(deviceName);
-        localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
+    
+    // Cek duplikat
+    if (devices.some(d => d.toLowerCase() === deviceName.toLowerCase())) {
+        alert('Device already exists!');
+        return;
     }
+
+    devices.push(deviceName);
+    localStorage.setItem('samurai_custom_devices', JSON.stringify(devices));
 
     const deviceGrid = document.querySelector('.device-grid');
     const addBtnItem = document.querySelector('.add-btn');
@@ -585,6 +530,6 @@ async function fetchWeather() {
         const temp = Math.round(data.current.temperature_2m);
         weatherBox.textContent = `${reg.name} ⛅ ${temp}°C`;
     } catch (error) {
-        weatherBox.textContent = `${reg.name} ⛅ 28Y°C`;
+        weatherBox.textContent = `${reg.name} ⛅ 28°C`;
     }
 }
