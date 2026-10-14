@@ -313,13 +313,26 @@ function loadSavedDevices() {
     if (!deviceGrid) return;
     const addBtnItem = deviceGrid.querySelector('.add-btn');
 
+    // Simpan daftar perangkat yang sedang aktif (ON) sebelum dirender ulang
+    const activeDevices = new Set();
+    deviceGrid.querySelectorAll('.device-item.active').forEach(el => {
+        const spanText = el.querySelector('span');
+        if (spanText) {
+            const name = spanText.textContent.replace(/🏮\s*/g, '').trim().toLowerCase();
+            activeDevices.add(name);
+        }
+    });
+
     deviceGrid.querySelectorAll('.device-item:not(.add-btn)').forEach(el => el.remove());
 
     devices.forEach(deviceName => {
+        const cleanName = deviceName.toLowerCase();
+        const isActive = activeDevices.has(cleanName);
+
         const newCard = document.createElement('div');
-        newCard.className = 'device-item';
+        newCard.className = isActive ? 'device-item active' : 'device-item';
         newCard.setAttribute('onclick', `toggleDevice(this, '${deviceName}')`);
-        newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">⚪</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
+        newCard.innerHTML = `<span>🏮 ${deviceName}</span> <div class="device-actions"><span class="status-icon">${isActive ? '🔵' : '⚪'}</span><button class="btn-delete-device" onclick="deleteDevice(event, '${deviceName}')" title="Delete Device">❌</button></div>`;
         
         if (addBtnItem) {
             deviceGrid.insertBefore(newCard, addBtnItem);
