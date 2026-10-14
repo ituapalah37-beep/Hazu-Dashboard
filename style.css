@@ -188,7 +188,7 @@ body {
 
 .wallpaper-card {
     width: 100%;
-    height: 260px;
+    height: 220px;
     border-radius: 12px;
     overflow: hidden;
     position: relative;
@@ -251,24 +251,24 @@ body {
 .rfid-badge.idle { background: #374151; color: #9ca3af; }
 .rfid-badge.active { background: #059669; color: #d1fae5; box-shadow: 0 0 10px rgba(5,150,105,0.5); }
 
+/* --- TATA LETAK DUA KOTAK PERSEGI KARTU RFID BERSEBELAHAN --- */
 .rfid-status-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
 }
 
 .rfid-status-card {
     background: #1f2937;
     border: 1px solid #374151;
-    padding: 14px;
-    border-radius: 14px;
+    padding: 12px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 6px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    transition: 0.3s ease;
 }
 
 .rfid-status-card.active {
@@ -277,48 +277,43 @@ body {
 }
 
 .card-icon-center {
-    font-size: 24px;
+    font-size: 22px;
     background: rgba(59, 130, 246, 0.15);
-    padding: 8px;
-    border-radius: 10px;
+    padding: 6px;
+    border-radius: 8px;
     margin-bottom: 2px;
 }
 
 .card-title {
-    font-size: 10px;
+    font-size: 9px;
     color: #9ca3af;
     font-weight: bold;
     letter-spacing: 0.5px;
 }
 
 .card-state {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: #f3f4f6;
-    margin-bottom: 4px;
 }
 
 .btn-pass-unlock {
     background: #2563eb;
     color: white;
     border: none;
-    padding: 5px 12px;
-    border-radius: 8px;
-    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 10px;
     cursor: pointer;
     font-weight: bold;
     transition: 0.2s;
     width: 100%;
+    margin-top: 4px;
 }
 
 .btn-pass-unlock:hover {
     background: #1d4ed8;
 }
-
-body.light-mode .rfid-status-card { background: #f8fafc; border-color: #cbd5e1; }
-body.light-mode .rfid-status-card.active { background: rgba(5, 150, 105, 0.08); border-color: #059669; }
-body.light-mode .card-title { color: #64748b; }
-body.light-mode .card-state { color: #1e293b; }
 
 .device-section h3 {
     font-size: 13px;
@@ -756,7 +751,7 @@ body.light-mode .toast-notification {
     }
 
     .wallpaper-card {
-        height: 200px;
+        height: 180px;
     }
 
     .forecast-grid {
