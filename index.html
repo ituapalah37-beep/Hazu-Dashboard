@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <div class="dashboard-container">
       <!-- Sidebar Kiri (Desktop) / Bottom Nav (Mobile) -->
       <nav class="sidebar">
@@ -16,13 +19,13 @@
           >🏠 <span>Home</span></a
         >
         <a class="menu-item" onclick="switchView('result', this)"
-          >📊 <span>Result</span></a
+          >📊 <span>Logs</span></a
         >
         <a class="menu-item" onclick="switchView('device', this)"
           >⚙️ <span>Device</span></a
         >
         <a class="menu-item settings" onclick="openSettings()"
-          >🛠️ <span>Setting</span></a
+          >🛠️ <span>Settings</span></a
         >
       </nav>
 
@@ -30,8 +33,8 @@
       <main class="main-content">
         <!-- Header Atas -->
         <header class="header">
-          <h1>⛩️ Samurai Control</h1>
-          <div class="weather-box">Memuat cuaca...</div>
+          <h1 id="header-main-title">⛩️ Samurai Control</h1>
+          <div class="weather-box">Loading weather...</div>
         </header>
 
         <!-- Tampilan Home / Kontrol Utama -->
@@ -57,19 +60,29 @@
             </div>
           </div>
 
+          <!-- Fitur Kartu Akses RFID di Bawah Live Wallpaper -->
+          <div class="rfid-card-panel">
+            <div class="rfid-icon">💳</div>
+            <div class="rfid-info">
+              <span class="rfid-label">Active RFID Access Card</span>
+              <span id="rfid-card-status" class="rfid-value">Waiting for RFID scan...</span>
+            </div>
+            <div id="rfid-badge" class="rfid-badge idle">Standby</div>
+          </div>
+
           <!-- Panel Kontrol Perangkat -->
           <div class="device-section">
-            <h3>Panel Kontrol Perangkat</h3>
+            <h3>Device Control Panel</h3>
             <div class="device-grid">
               <div
                 class="device-item"
-                onclick="toggleDevice(this, 'Lampu Utama')"
+                onclick="toggleDevice(this, 'Main Light')"
               >
-                <span>🏮 Lampu Utama</span>
+                <span>🏮 Main Light</span>
                 <span class="status-icon">⚪</span>
               </div>
               <div class="device-item add-btn" onclick="openAddModal()">
-                + Tambah Perangkat
+                + Add Device
               </div>
             </div>
           </div>
@@ -77,11 +90,11 @@
 
         <!-- Tampilan Result / Logs -->
         <section id="result-view" class="view-section">
-          <h2>📊 Log Aktivitas Sistem</h2>
+          <h2>📊 System Activity Logs</h2>
           <div class="log-container">
             <div id="logList" class="log-list">
               <div class="log-item">
-                <span>Sistem siap. Menunggu koneksi cloud...</span>
+                <span>System ready. Waiting for cloud connection...</span>
                 <span class="log-time">-</span>
               </div>
             </div>
@@ -90,20 +103,20 @@
 
         <!-- Tampilan Device / Info -->
         <section id="device-view" class="view-section">
-          <h2>⚙️ Informasi Status Cloud</h2>
+          <h2>⚙️ Cloud Status Information</h2>
           <div class="device-manager-container">
             <div class="hardware-card">
               <div class="hw-info">
-                <h4>Broker MQTT</h4>
+                <h4>MQTT Broker</h4>
                 <p>EMQX Cloud (Public WSS)</p>
               </div>
               <span id="mqtt-status" class="hw-status" style="color: #f87171"
-                >Menghubungkan...</span
+                >Connecting...</span
               >
             </div>
             <div class="hardware-card">
               <div class="hw-info">
-                <h4>Client ID Perangkat Ini</h4>
+                <h4>Device Client ID</h4>
                 <p id="client-id-display">-</p>
               </div>
             </div>
@@ -121,16 +134,16 @@
     <!-- Modal Tambah Perangkat -->
     <div id="addModal" class="modal">
       <div class="modal-content">
-        <h3>Tambah Perangkat Baru</h3>
+        <h3>Add New Device</h3>
         <input
           type="text"
           id="deviceNameInput"
-          placeholder="Nama Perangkat (misal: Kipas)"
+          placeholder="Device Name (e.g., Fan)"
         />
         <div class="modal-buttons">
-          <button class="btn-cancel" onclick="closeAddModal()">Batal</button>
+          <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
           <button class="btn-submit" onclick="confirmAddDevice()">
-            Simpan
+            Save
           </button>
         </div>
       </div>
@@ -139,9 +152,9 @@
     <!-- Modal Pengaturan -->
     <div id="settingsModal" class="modal">
       <div class="modal-content">
-        <h3>Pengaturan Dashboard</h3>
+        <h3>Dashboard Settings</h3>
         <div class="setting-item">
-          <label>Judul Sambutan:</label>
+          <label>Welcome Title:</label>
           <input
             type="text"
             id="welcomeInput"
@@ -149,7 +162,7 @@
           />
         </div>
         <div class="setting-item">
-          <label>Wilayah:</label>
+          <label>Region:</label>
           <select id="regionSelect">
             <option value="jakarta">Jakarta</option>
             <option value="bandung">Bandung</option>
@@ -160,7 +173,7 @@
           </select>
         </div>
         <div class="setting-item">
-          <label>Tema Tampilan:</label>
+          <label>Display Theme:</label>
           <select id="themeSelect">
             <option value="dark">Dark Mode</option>
             <option value="light">Light Mode</option>
@@ -169,22 +182,21 @@
         <div class="setting-item">
           <label>Live Wallpaper:</label>
           <select id="wallpaperStatusSelect">
-            <option value="on">Aktif</option>
-            <option value="off">Nonaktif</option>
+            <option value="on">Active</option>
+            <option value="off">Inactive</option>
           </select>
         </div>
-        <!-- Bagian di dalam Modal Pengaturan index.html -->
         <div class="setting-item">
-          <label>Pilih Video Wallpaper:</label>
+          <label>Select Wallpaper Video:</label>
           <select id="wallpaperFileSelect">
             <option value="https://github.com/ituapalah37-beep/Hazu-Dashboard/releases/download/v1.0.0/Cyberpunk.mp4">Samurai Cyber Neon</option>
             <option value="https://github.com/ituapalah37-beep/Hazu-Dashboard/releases/download/v1.0.0/samurai.mp4">Samurai Monochrome</option>
-            <option value="https://github.com/ituapalah37-beep/Hazu-Dashboard/releases/download/v1.0.0/Nature.mp4">Kucing & Ikan Koi</option>
+            <option value="https://github.com/ituapalah37-beep/Hazu-Dashboard/releases/download/v1.0.0/Nature.mp4">Cat & Koi Fish</option>
           </select>
         </div>
         <div class="modal-buttons">
-          <button class="btn-cancel" onclick="closeSettings()">Batal</button>
-          <button class="btn-submit" onclick="saveSettings()">Simpan</button>
+          <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+          <button class="btn-submit" onclick="saveSettings()">Save</button>
         </div>
       </div>
     </div>
