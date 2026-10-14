@@ -45,6 +45,26 @@
             <div id="rfid-badge" class="rfid-badge idle">Standby</div>
           </div>
 
+          <!-- Tambahan 2 Kotak Indikator Status Kartu RFID & Tombol Password -->
+          <div class="rfid-status-grid">
+              <div class="rfid-status-card" id="card1StatusBox">
+                  <span class="card-icon">💳</span>
+                  <div class="card-info">
+                      <span class="card-title">KARTU 1 (MAIN SYSTEM - D14)</span>
+                      <span class="card-state" id="card1StateText">Standby / Off</span>
+                  </div>
+                  <button class="btn-pass-unlock" onclick="openPasswordModal()">🔒 Unlock</button>
+              </div>
+              
+              <div class="rfid-status-card" id="card2StatusBox">
+                  <span class="card-icon">💳</span>
+                  <div class="card-info">
+                      <span class="card-title">KARTU 2 (DEVICE 2 - D27)</span>
+                      <span class="card-state" id="card2StateText">Standby / Off</span>
+                  </div>
+              </div>
+          </div>
+
           <div class="device-section">
             <h3>Device Control Panel</h3>
             <div class="device-grid" id="deviceGrid">
@@ -107,6 +127,21 @@
       </main>
     </div>
 
+    <!-- Modal Input Password untuk Kontrol Jarak Jauh -->
+    <div class="modal" id="passwordModal">
+      <div class="modal-content">
+        <h3>🔐 Password Kontrol Utama</h3>
+        <p style="font-size: 11px; color: #9ca3af;">Masukkan password master untuk menyalakan/mematikan sistem AC utama dari jarak jauh.</p>
+        <div class="setting-item">
+          <input type="password" id="systemPasswordInput" placeholder="Masukkan password..." />
+        </div>
+        <div class="modal-buttons">
+          <button class="btn-cancel" onclick="closePasswordModal()">Batal</button>
+          <button class="btn-submit" onclick="submitSystemPassword()">Kirim Perintah</button>
+        </div>
+      </div>
+    </div>
+
     <div id="addModal" class="modal">
       <div class="modal-content">
         <h3>Add New Device</h3>
@@ -127,78 +162,29 @@
         </div>
         <div class="setting-item">
           <label>Region:</label>
-<select id="regionSelect">
-  <optgroup label="DKI Jakarta">
-    <option value="jakarta">Jakarta</option>
-  </optgroup>
-  <optgroup label="Jawa Barat">
-    <option value="bandung">Bandung</option>
-    <option value="bekasi">Bekasi</option>
-    <option value="depok">Depok</option>
-    <option value="bogor">Bogor</option>
-  </optgroup>
-  <optgroup label="Jawa Tengah">
-    <option value="semarang">Semarang</option>
-    <option value="surakarta">Surakarta</option>
-  </optgroup>
-  <optgroup label="Jawa Timur">
-    <option value="surabaya">Surabaya</option>
-    <option value="malang">Malang</option>
-  </optgroup>
-  <optgroup label="DI Yogyakarta">
-    <option value="yogyakarta">Yogyakarta</option>
-  </optgroup>
-  <optgroup label="Banten">
-    <option value="serang">Serang</option>
-    <option value="tangerang">Tangerang</option>
-  </optgroup>
-  <optgroup label="Sumatera Utara">
-    <option value="medan">Medan</option>
-  </optgroup>
-  <optgroup label="Sumatera Barat">
-    <option value="padang">Padang</option>
-  </optgroup>
-  <optgroup label="Riau">
-    <option value="pekanbaru">Pekanbaru</option>
-  </optgroup>
-  <optgroup label="Kepulauan Riau">
-    <option value="batam">Batam</option>
-  </optgroup>
-  <optgroup label="Sumatera Selatan">
-    <option value="palembang">Palembang</option>
-  </optgroup>
-  <optgroup label="Lampung">
-    <option value="bandarlampung">Bandar Lampung</option>
-  </optgroup>
-  <optgroup label="Bali">
-    <option value="denpasar">Denpasar</option>
-  </optgroup>
-  <optgroup label="Nusa Tenggara Barat">
-    <option value="mataram">Mataram</option>
-  </optgroup>
-  <optgroup label="Nusa Tenggara Timur">
-    <option value="kupang">Kupang</option>
-  </optgroup>
-  <optgroup label="Kalimantan Selatan">
-    <option value="banjarmasin">Banjarmasin</option>
-  </optgroup>
-  <optgroup label="Kalimantan Timur">
-    <option value="samarinda">Samarinda</option>
-    <option value="balikpapan">Balikpapan</option>
-  </optgroup>
-  <optgroup label="Sulawesi Selatan">
-    <option value="makassar">Makassar</option>
-  </optgroup>
-  <optgroup label="Sulawesi Utara">
-    <option value="manado">Manado</option>
-  </optgroup>
-  <optgroup label="Maluku">
-    <option value="ambon">Ambon</option>
-  </optgroup>
-  <optgroup label="Papua">
-    <option value="jayapura">Jayapura</option>
-  </optgroup>
-</select>
+          <select id="regionSelect">
+            <optgroup label="DKI Jakarta"><option value="jakarta">Jakarta</option></optgroup>
+            <optgroup label="Jawa Barat"><option value="bandung">Bandung</option><option value="bekasi">Bekasi</option><option value="depok">Depok</option><option value="bogor">Bogor</option></optgroup>
+            <optgroup label="Jawa Tengah"><option value="semarang">Semarang</option><option value="surakarta">Surakarta</option></optgroup>
+            <optgroup label="Jawa Timur"><option value="surabaya">Surabaya</option><option value="malang">Malang</option></optgroup>
+            <optgroup label="DI Yogyakarta"><option value="yogyakarta">Yogyakarta</option></optgroup>
+            <optgroup label="Banten"><option value="serang">Serang</option><option value="tangerang">Tangerang</option></optgroup>
+            <optgroup label="Sumatera Utara"><option value="medan">Medan</option></optgroup>
+            <optgroup label="Sumatera Barat"><option value="padang">Padang</option></optgroup>
+            <optgroup label="Riau"><option value="pekanbaru">Pekanbaru</option></optgroup>
+            <optgroup label="Kepulauan Riau"><option value="batam">Batam</option></optgroup>
+            <optgroup label="Sumatera Selatan"><option value="palembang">Palembang</option></optgroup>
+            <optgroup label="Lampung"><option value="bandarlampung">Bandar Lampung</option></optgroup>
+            <optgroup label="Bali"><option value="denpasar">Denpasar</option></optgroup>
+            <optgroup label="Nusa Tenggara Barat"><option value="mataram">Mataram</option></optgroup>
+            <optgroup label="Nusa Tenggara Timur"><option value="kupang">Kupang</option></optgroup>
+            <optgroup label="Kalimantan Selatan"><option value="banjarmasin">Banjarmasin</option></optgroup>
+            <optgroup label="Kalimantan Timur"><option value="samarinda">Samarinda</option><option value="balikpapan">Balikpapan</option></optgroup>
+            <optgroup label="Sulawesi Selatan"><option value="makassar">Makassar</option></optgroup>
+            <optgroup label="Sulawesi Utara"><option value="manado">Manado</option></optgroup>
+            <optgroup label="Maluku"><option value="ambon">Ambon</option></optgroup>
+            <optgroup label="Papua"><option value="jayapura">Jayapura</option></optgroup>
+          </select>
         </div>
         <div class="setting-item">
           <label>Display Theme:</label>
